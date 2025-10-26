@@ -15,6 +15,7 @@ build/
 .out/
 .next/
 .nuxt/
+
 # Temporary
 tmp/
-temp/cl
+temp/
