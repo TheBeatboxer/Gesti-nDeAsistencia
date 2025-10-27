@@ -8,6 +8,7 @@ const AttendanceSchema = new mongoose.Schema({
   turno: { type: Number, enum: [1,2] },
   status: { type: String, enum: ['P','T','F'], required: true },
   observation: { type: String },
+  finalized: { type: Boolean, default: false }, // new field to mark if attendance for this date is finalized
   createdAt: { type: Date, default: Date.now }
 });
 

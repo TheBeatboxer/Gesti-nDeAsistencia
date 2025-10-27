@@ -1,15 +1,16 @@
 const Attendance = require('../models/Attendance');
 const Assignment = require('../models/Assignment');
 const User = require('../models/User');
+const moment = require('moment-timezone');
 
-// Helper: same week start logic (duplicate or import)
-function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0,0,0,0);
-  return d;
+// Helper: normalize date to 00:00:00 in America/Lima timezone
+function normalizeDate(date) {
+  if (typeof date === 'string') {
+    const [year, month, day] = date.split('-').map(Number);
+    return moment.tz({ year, month: month - 1, day }, 'America/Lima').startOf('day').toDate();
+  }
+  const d = moment.tz(date, 'America/Lima');
+  return d.startOf('day').toDate();
 }
 
 exports.markAttendance = async (req, res) => {
@@ -17,15 +18,21 @@ exports.markAttendance = async (req, res) => {
     const { date, workerId, status, observation } = req.body;
     if (!date || !workerId || !status) return res.status(400).json({ msg: 'date, workerId and status are required' });
 
-    const d = new Date(date);
-    const weekStart = getWeekStart(d);
+    const d = normalizeDate(new Date(date));
 
-    const assignment = await Assignment.findOne({ weekStart }).lean();
-    if (!assignment) return res.status(400).json({ msg: 'No assignment for the week' });
+    const assignment = await Assignment.findOne({
+      startDate: { $lte: d },
+      endDate: { $gte: d }
+    }).lean();
+    if (!assignment) return res.status(400).json({ msg: 'No assignment for the date' });
 
-    // Validate encargado is assigned for this week
+    // Validate encargado is assigned for this date
     const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
-    if (!encAssign && req.user.role !== 'ADMIN') return res.status(403).json({ msg: 'You are not assigned for this week' });
+    if (!encAssign && req.user.role !== 'ADMIN') return res.status(403).json({ msg: 'You are not assigned for this date' });
+
+    // Check if attendance for this date is already finalized
+    const existingFinalized = await Attendance.findOne({ date: d, finalized: true });
+    if (existingFinalized) return res.status(400).json({ msg: 'Attendance for this date is already finalized' });
 
     // Check worker exists
     const worker = await User.findById(workerId);
@@ -57,6 +64,45 @@ exports.markAttendance = async (req, res) => {
   }
 };
 
+exports.finalizeAttendance = async (req, res) => {
+  try {
+    const { date } = req.body;
+    if (!date) return res.status(400).json({ msg: 'date is required' });
+
+    const d = normalizeDate(new Date(date));
+
+    const assignment = await Assignment.findOne({
+      startDate: { $lte: d },
+      endDate: { $gte: d }
+    }).lean();
+    if (!assignment) return res.status(400).json({ msg: 'No assignment for the date' });
+
+    // Validate encargado is assigned for this date
+    const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
+    if (!encAssign && req.user.role !== 'ADMIN') return res.status(403).json({ msg: 'You are not assigned for this date' });
+
+    // Get all workers for this encargado's area and turno
+    const workers = await User.find({ role: 'WORKER', area: encAssign.area, turno: encAssign.turno }).select('_id');
+    const workerIds = workers.map(w => w._id.toString());
+
+    // Check if all workers have attendance marked
+    const markedAttendances = await Attendance.find({ date: d, worker: { $in: workerIds } });
+    if (markedAttendances.length < workerIds.length) {
+      return res.status(400).json({ msg: 'Not all workers have attendance marked' });
+    }
+
+    // Finalize all attendances for this date and area/turno
+    await Attendance.updateMany(
+      { date: d, worker: { $in: workerIds } },
+      { finalized: true }
+    );
+
+    res.json({ msg: 'Attendance finalized for the date' });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
 exports.getAttendanceReport = async (req, res) => {
   try {
     const { from, to, workerId, area, turno } = req.query;
@@ -69,16 +115,24 @@ exports.getAttendanceReport = async (req, res) => {
     if (area) q.area = area;
     if (turno) q.turno = turno;
 
-    // If encargado, filter by their assigned area and turno
+    // If encargado, filter by their assigned area and turno for the period
     if (req.user.role === 'ENCARGADO') {
-      const today = new Date();
-      const ws = getWeekStart(today);
-      const assignment = await Assignment.findOne({ weekStart: ws }).lean();
-      if (assignment) {
-        const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
-        if (encAssign) {
-          q.area = encAssign.area;
-          q.turno = encAssign.turno;
+      // Get all assignments where the encargado is assigned
+      const assignments = await Assignment.find({
+        assignments: { $elemMatch: { encargado: req.user._id } }
+      }).lean();
+      if (assignments.length > 0) {
+        // Collect all areas and turnos for this encargado across assignments
+        const areas = [...new Set(assignments.flatMap(a => a.assignments.filter(as => as.encargado.toString() === req.user._id.toString()).map(as => as.area)))];
+        const turnos = [...new Set(assignments.flatMap(a => a.assignments.filter(as => as.encargado.toString() === req.user._id.toString()).map(as => as.turno)))];
+        q.area = { $in: areas };
+        q.turno = { $in: turnos };
+        // Also filter dates to only within assignment periods
+        const dateFilters = assignments.map(a => ({
+          date: { $gte: a.startDate, $lte: a.endDate }
+        }));
+        if (dateFilters.length > 0) {
+          q.$or = dateFilters;
         }
       }
     }

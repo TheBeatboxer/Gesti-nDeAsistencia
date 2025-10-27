@@ -5,6 +5,7 @@ const attendanceController = require('../controllers/attendanceController');
 const { authMiddleware, authorizeRoles } = require('../middleware/auth');
 
 router.post('/mark', authMiddleware, authorizeRoles('ENCARGADO','ADMIN'), attendanceController.markAttendance);
+router.post('/finalize', authMiddleware, authorizeRoles('ENCARGADO','ADMIN'), attendanceController.finalizeAttendance);
 router.get('/report', authMiddleware, authorizeRoles('ADMIN','ENCARGADO','WORKER'), attendanceController.getAttendanceReport);
 
 module.exports = router;

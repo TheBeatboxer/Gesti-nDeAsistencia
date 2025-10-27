@@ -4,10 +4,14 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { authMiddleware, authorizeRoles } = require('../middleware/auth');
 
-router.post('/assignment', authMiddleware, authorizeRoles('ADMIN'), adminController.createOrUpdateAssignment);
-router.get('/assignment/:weekStart', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getAssignmentForWeek);
+// Primero las rutas específicas
 router.get('/assignment/current', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getCurrentAssignment);
-router.post('/assignment/rotate', authMiddleware, authorizeRoles('ADMIN'), adminController.rotateAssignments);
+router.get('/assignments', authMiddleware, authorizeRoles('ADMIN'), adminController.getAllAssignments);
+
+// Luego las rutas con parámetros
+router.post('/assignment', authMiddleware, authorizeRoles('ADMIN'), adminController.createOrUpdateAssignment);
+router.get('/assignment/:date', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getAssignmentForDate);
+router.delete('/assignment/:id', authMiddleware, authorizeRoles('ADMIN'), adminController.deleteAssignment);
 
 router.get('/workers', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getWorkers);
 router.get('/encargados', authMiddleware, authorizeRoles('ADMIN'), adminController.getEncargados);

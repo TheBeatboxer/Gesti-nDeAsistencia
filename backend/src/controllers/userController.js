@@ -1,12 +1,9 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
-// Helper: same week start logic (duplicate or import)
-function getWeekStart(date) {
+// Helper: normalize date to 00:00:00
+function normalizeDate(date) {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  d.setDate(d.getDate() + diff);
   d.setHours(0,0,0,0);
   return d;
 }
@@ -39,9 +36,11 @@ exports.listAll = async (req, res) => {
       filter = {};
     } else if (req.user.role === 'ENCARGADO') {
       // Encargado can only see workers in their assigned area and turno
-      const today = new Date();
-      const ws = getWeekStart(today);
-      const assignment = await Assignment.findOne({ weekStart: ws }).lean();
+      const today = normalizeDate(new Date());
+      const assignment = await Assignment.findOne({
+        startDate: { $lte: today },
+        endDate: { $gte: today }
+      }).lean();
       if (assignment) {
         const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
         if (encAssign) {

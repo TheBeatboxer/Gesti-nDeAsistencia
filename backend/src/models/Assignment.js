@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const AssignmentSchema = new mongoose.Schema({
-  weekStart: { type: Date, required: true }, // ISO date for monday (or chosen start)
+  startDate: { type: Date, required: true }, // ISO date for start (user-selected)
+  endDate: { type: Date, required: true }, // required end date for the assignment range
   assignments: [{
     encargado: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     area: { type: String, enum: ['Manufactura','Envasado'], required: true },
@@ -11,6 +12,6 @@ const AssignmentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-AssignmentSchema.index({ weekStart: 1 }, { unique: true });
+AssignmentSchema.index({ startDate: 1 }, { unique: true });
 
 module.exports = mongoose.model('Assignment', AssignmentSchema);
