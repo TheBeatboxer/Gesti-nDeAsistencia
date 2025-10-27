@@ -5,12 +5,13 @@ const moment = require('moment-timezone');
 
 // Helper: normalize date to 00:00:00 in America/Lima timezone
 function normalizeDate(date) {
+  const limaTZ = 'America/Lima';
+  // If the date is a string like 'YYYY-MM-DD', parse it explicitly in Lima TZ
   if (typeof date === 'string') {
-    const [year, month, day] = date.split('-').map(Number);
-    return moment.tz({ year, month: month - 1, day }, 'America/Lima').startOf('day').toDate();
+    return moment.tz(date, 'YYYY-MM-DD', limaTZ).startOf('day').toDate();
   }
-  const d = moment.tz(date, 'America/Lima');
-  return d.startOf('day').toDate();
+  // If it's a Date object, convert to Lima TZ and normalize to start of day
+  return moment(date).tz(limaTZ).startOf('day').toDate();
 }
 
 exports.markAttendance = async (req, res) => {
@@ -18,13 +19,19 @@ exports.markAttendance = async (req, res) => {
     const { date, workerId, status, observation } = req.body;
     if (!date || !workerId || !status) return res.status(400).json({ msg: 'date, workerId and status are required' });
 
-    const d = normalizeDate(new Date(date));
+  console.log('markAttendance payload:', { date, workerId, status });
+  const d = normalizeDate(date);
+  console.log('Normalized date (Lima startOfDay):', d);
 
     const assignment = await Assignment.findOne({
       startDate: { $lte: d },
       endDate: { $gte: d }
     }).lean();
-    if (!assignment) return res.status(400).json({ msg: 'No assignment for the date' });
+    console.log('Assignment lookup result for date:', assignment ? assignment._id : null);
+    if (!assignment) {
+      console.log('No assignment found for date:', d);
+      return res.status(400).json({ msg: 'No assignment for the date' });
+    }
 
     // Validate encargado is assigned for this date
     const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
@@ -69,33 +76,51 @@ exports.finalizeAttendance = async (req, res) => {
     const { date } = req.body;
     if (!date) return res.status(400).json({ msg: 'date is required' });
 
-    const d = normalizeDate(new Date(date));
+    console.log('finalizeAttendance payload:', { date, userId: req.user._id });
+    const d = normalizeDate(date);
+    console.log('Normalized finalize date (Lima startOfDay):', d);
 
     const assignment = await Assignment.findOne({
       startDate: { $lte: d },
       endDate: { $gte: d }
     }).lean();
-    if (!assignment) return res.status(400).json({ msg: 'No assignment for the date' });
+    console.log('Assignment lookup for finalize:', assignment ? assignment._id : null);
+    if (!assignment) {
+      console.log('No assignment found for finalize date:', d);
+      return res.status(400).json({ msg: 'No assignment for the date' });
+    }
 
     // Validate encargado is assigned for this date
-    const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
-    if (!encAssign && req.user.role !== 'ADMIN') return res.status(403).json({ msg: 'You are not assigned for this date' });
+    const encAssign = assignment.assignments.find(a => String(a.encargado) === String(req.user._id));
+    if (!encAssign && req.user.role !== 'ADMIN') {
+      console.log('User not assigned for finalize date:', req.user._id);
+      return res.status(403).json({ msg: 'You are not assigned for this date' });
+    }
 
     // Get all workers for this encargado's area and turno
-    const workers = await User.find({ role: 'WORKER', area: encAssign.area, turno: encAssign.turno }).select('_id');
+    const areaToUse = encAssign ? encAssign.area : (assignment.assignments[0]?.area);
+    const turnoToUse = encAssign ? encAssign.turno : (assignment.assignments[0]?.turno || 1);
+    const workers = await User.find({ role: 'WORKER', area: areaToUse, turno: turnoToUse }).select('_id');
     const workerIds = workers.map(w => w._id.toString());
+
+    if (workerIds.length === 0) {
+      console.log('No workers found for area/turno:', { area: areaToUse, turno: turnoToUse });
+      return res.status(400).json({ msg: 'No workers found for the assignment area/turno' });
+    }
 
     // Check if all workers have attendance marked
     const markedAttendances = await Attendance.find({ date: d, worker: { $in: workerIds } });
     if (markedAttendances.length < workerIds.length) {
+      console.log('Marked attendances count less than workers:', { marked: markedAttendances.length, total: workerIds.length });
       return res.status(400).json({ msg: 'Not all workers have attendance marked' });
     }
 
     // Finalize all attendances for this date and area/turno
-    await Attendance.updateMany(
+    const updateResult = await Attendance.updateMany(
       { date: d, worker: { $in: workerIds } },
       { finalized: true }
     );
+    console.log('Attendance finalize update result:', updateResult);
 
     res.json({ msg: 'Attendance finalized for the date' });
   } catch (err) {
