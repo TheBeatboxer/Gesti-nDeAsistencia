@@ -26,7 +26,7 @@ onMounted(() => {
       <router-view />
     </div>
     <!-- Other views stay constrained for readable layout on wide screens -->
-    <main v-else class="max-w-screen-md mx-auto p-4 sm:p-6">
+    <main v-else class="w-full p-4 sm:p-6 lg:p-8">
       <router-view />
     </main>
     <Toast />

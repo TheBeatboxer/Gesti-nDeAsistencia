@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6">
-    <h1 class="text-2xl mb-4">Panel Encargado</h1>
+  <div class="p-4 sm:p-6 lg:p-8">
+    <h1 class="text-2xl lg:text-3xl mb-4">Panel Encargado</h1>
     <div v-if="currentAssignment" class="bg-blue-100 p-4 rounded shadow mb-4">
       <h3 class="font-semibold">Tu asignación actual</h3>
       <p>Área: {{ getAssignedArea() }}</p>
@@ -10,7 +10,7 @@
 
     <div v-if="currentAssignment" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Días de asistencia asignados</h3>
-      <div class="flex flex-wrap gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
         <div v-for="day in assignmentDays" :key="day.date" class="border p-2 rounded shadow hover:bg-gray-50 cursor-pointer text-center" @click="selectDay(day)">
           <div class="text-sm font-semibold">{{ day.label }}</div>
           <div class="text-xs text-gray-600">{{ day.dateFormatted }}</div>
@@ -26,7 +26,7 @@
       <h3 class="font-semibold mb-2">Marcar asistencia para {{ selectedDay.label }} - {{ selectedDay.dateFormatted }}</h3>
       <p class="text-sm text-gray-600 mb-4">Trabajadores asignados a tu área</p>
       <div class="overflow-x-auto">
-        <table class="min-w-full border-collapse border border-gray-300">
+        <table class="min-w-full border-collapse border border-gray-300 text-sm lg:text-base">
         <thead>
           <tr class="bg-gray-200">
             <th class="border border-gray-300 p-2">Trabajador</th>
@@ -39,7 +39,7 @@
           <tr v-for="w in workers" :key="w._id" class="hover:bg-gray-50">
             <td class="border border-gray-300 p-2">{{ w.name }} ({{ w.area }} - Turno {{ w.turno }})</td>
             <td class="border border-gray-300 p-2">
-              <select v-model="attendance[w._id].status" class="border p-1 rounded">
+              <select v-model="attendance[w._id].status" class="border p-1 rounded w-full">
                 <option value="">Seleccionar</option>
                 <option value="P">Presente</option>
                 <option value="T">Tardanza</option>
@@ -49,27 +49,27 @@
             <td class="border border-gray-300 p-2">
               <input v-model="attendance[w._id].observation" placeholder="Observación" class="border p-1 w-full rounded" />
             </td>
-                          <td class="border border-gray-300 p-2">
-                <button 
-                  @click="markForWorker(w._id)" 
-                  class="px-3 py-1 rounded text-white"
-                  :class="{
-                    'bg-green-500 hover:bg-green-600': attendance[w._id].isMarked,
-                    'bg-blue-500 hover:bg-blue-600': !attendance[w._id].isMarked
-                  }"
-                >
-                  {{ attendance[w._id].isMarked ? 'Marcado' : 'Marcar' }}
-                </button>
-              </td>
+            <td class="border border-gray-300 p-2">
+              <button
+                @click="markForWorker(w._id)"
+                class="px-3 py-1 rounded text-white text-xs sm:text-sm"
+                :class="{
+                  'bg-green-500 hover:bg-green-600': attendance[w._id].isMarked,
+                  'bg-blue-500 hover:bg-blue-600': !attendance[w._id].isMarked
+                }"
+              >
+                {{ attendance[w._id].isMarked ? 'Marcado' : 'Marcar' }}
+              </button>
+            </td>
           </tr>
         </tbody>
         </table>
       </div>
-      <div class="mt-4 flex gap-4">
-        <button @click="markAllPresent" class="px-4 py-2 bg-green-600 text-white rounded">
+      <div class="mt-4 flex flex-col sm:flex-row gap-4">
+        <button @click="markAllPresent" class="px-4 py-2 bg-green-600 text-white rounded text-sm">
           Marcar todos como Presentes
         </button>
-        <button @click="finalizeAttendance" class="px-4 py-2 bg-red-600 text-white rounded">
+        <button @click="finalizeAttendance" class="px-4 py-2 bg-red-600 text-white rounded text-sm">
           Finalizar asistencia para este día
         </button>
       </div>
@@ -94,7 +94,7 @@
             <p>Turno: {{ getAssignedTurnoLabel() }}</p>
           </div>
           <div class="overflow-x-auto">
-            <table class="min-w-full border-collapse border border-gray-300 bg-white">
+            <table class="min-w-full border-collapse border border-gray-300 bg-white text-sm lg:text-base">
             <thead>
               <tr class="bg-gray-200">
                 <th class="border border-gray-300 p-2">Trabajador</th>
@@ -164,7 +164,7 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="min-w-full bg-white border rounded-lg">
+          <table class="min-w-full bg-white border rounded-lg text-sm lg:text-base">
             <thead>
               <tr class="bg-gray-100">
                 <th class="border p-3 text-left">Fecha</th>
@@ -181,9 +181,9 @@
                 <td class="border p-3">{{ getStatusLabel(record.status) }}</td>
                 <td class="border p-3">{{ record.observation }}</td>
                 <td class="border p-3">
-                  <button 
+                  <button
                     @click="exportSingleDayPDF(record.date)"
-                    class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-1 px-2 rounded"
+                    class="bg-blue-500 hover:bg-blue-700 text-white text-xs sm:text-sm py-1 px-2 rounded"
                   >
                     Exportar PDF
                   </button>

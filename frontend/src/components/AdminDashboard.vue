@@ -1,6 +1,6 @@
- <template>
-  <div class="p-4 sm:p-6">
-    <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
+<template>
+  <div class="p-4 sm:p-6 lg:p-8">
+    <h1 class="text-2xl lg:text-3xl font-bold mb-4">Admin Dashboard</h1>
     <div class="mb-4">
   <button @click="toggleAssignForm" class="px-4 py-2 bg-indigo-600 text-white rounded mr-2">Asignaciones</button>
       <button @click="toggleUserManagement" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Gestión de Usuarios</button>
@@ -14,14 +14,14 @@
       </div>
       <div v-if="assignmentsHistory.length" class="mb-4">
         <h4 class="font-medium mb-2">Asignaciones existentes (seleccionar para editar o eliminar)</h4>
-        <div v-for="doc in assignmentsHistory" :key="doc._id" class="flex items-start justify-between mb-2 p-2 border rounded">
-          <div>
-            <div class="font-medium">Periodo: {{ new Date(doc.startDate).toLocaleDateString() }} - {{ new Date(doc.endDate).toLocaleDateString() }}</div>
-            <div class="text-sm text-gray-600">Encargados: {{ (doc.assignments||[]).map(a=> a.encargado ? a.encargado.name : '').filter(Boolean).join(', ') }}</div>
+        <div v-for="doc in assignmentsHistory" :key="doc._id" class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 p-2 border rounded gap-2">
+          <div class="flex-1">
+            <div class="font-medium text-sm sm:text-base">Periodo: {{ new Date(doc.startDate).toLocaleDateString() }} - {{ new Date(doc.endDate).toLocaleDateString() }}</div>
+            <div class="text-xs sm:text-sm text-gray-600">Encargados: {{ (doc.assignments||[]).map(a=> a.encargado ? a.encargado.name : '').filter(Boolean).join(', ') }}</div>
           </div>
-          <div class="flex items-center">
-            <button @click.prevent="editAssignment(doc)" class="px-2 py-1 bg-indigo-500 text-white rounded mr-2">Editar</button>
-            <button @click.prevent="deleteAssignment(doc._id)" class="px-2 py-1 bg-red-600 text-white rounded">Eliminar</button>
+          <div class="flex items-center gap-2">
+            <button @click.prevent="editAssignment(doc)" class="px-2 py-1 bg-indigo-500 text-white rounded text-xs sm:text-sm">Editar</button>
+            <button @click.prevent="deleteAssignment(doc._id)" class="px-2 py-1 bg-red-600 text-white rounded text-xs sm:text-sm">Eliminar</button>
           </div>
         </div>
       </div>
@@ -36,20 +36,20 @@
       <label>Fecha de fin</label>
       <input v-model="newAssignment.endDate" type="date" class="border p-2 rounded mb-2 w-full" />
 
-  <div v-for="(a, idx) in newAssignment.assignments" :key="idx" class="mb-2">
-  <select v-model="a.encargado" @change="setTurnoFromEncargado(a)" class="border p-2 rounded mr-2">
+  <div v-for="(a, idx) in newAssignment.assignments" :key="idx" class="mb-2 grid grid-cols-1 sm:grid-cols-5 gap-2">
+  <select v-model="a.encargado" @change="setTurnoFromEncargado(a)" class="border p-2 rounded col-span-1 sm:col-span-2">
           <option value="">Seleccionar Encargado</option>
           <option v-for="e in encargados" :value="e._id">{{ e.name }}</option>
         </select>
-        <select v-model="a.area" class="border p-2 rounded mr-2" disabled>
+        <select v-model="a.area" class="border p-2 rounded col-span-1" disabled>
           <option value="Manufactura">Manufactura</option>
           <option value="Envasado">Envasado</option>
         </select>
-        <select v-model.number="a.turno" class="border p-2 rounded mr-2" disabled>
+        <select v-model.number="a.turno" class="border p-2 rounded col-span-1" disabled>
           <option :value="1">Día</option>
           <option :value="2">Noche</option>
         </select>
-        <button @click="removeAssignment(idx)" class="px-2 py-1 bg-red-500 text-white rounded">Quitar</button>
+        <button @click="removeAssignment(idx)" class="px-2 py-1 bg-red-500 text-white rounded col-span-1">Quitar</button>
       </div>
       <button @click="addAssignment" class="px-4 py-2 bg-blue-500 text-white rounded mr-2">Agregar Asignación</button>
       <button @click="saveAssignment" class="px-4 py-2 bg-green-500 text-white rounded mr-2">Guardar</button>
@@ -63,13 +63,13 @@
     <div v-if="assignment" class="bg-white p-4 rounded shadow">
       <h2 class="font-semibold mb-2">Asignación para {{ weekString }}</h2>
       <div class="overflow-x-auto">
-        <table class="min-w-full">
-        <thead><tr><th>Encargado</th><th>Área</th><th>Turno</th></tr></thead>
+        <table class="min-w-full text-sm lg:text-base">
+        <thead><tr><th class="p-2">Encargado</th><th class="p-2">Área</th><th class="p-2">Turno</th></tr></thead>
         <tbody>
           <tr v-for="a in assignment.assignments" :key="a.encargado._id">
-            <td>{{ a.encargado.name }}</td>
-            <td>{{ a.area }}</td>
-            <td>{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
+            <td class="p-2">{{ a.encargado.name }}</td>
+            <td class="p-2">{{ a.area }}</td>
+            <td class="p-2">{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
           </tr>
         </tbody>
         </table>
@@ -82,13 +82,13 @@
       <div v-for="doc in assignmentsHistory" :key="doc._id" class="mb-4 border p-3 rounded">
         <div class="font-medium">Periodo: {{ new Date(doc.startDate).toLocaleDateString() }} - {{ new Date(doc.endDate).toLocaleDateString() }}</div>
         <div class="overflow-x-auto">
-          <table class="min-w-full mt-2">
-          <thead><tr><th>Encargado</th><th>Área</th><th>Turno</th></tr></thead>
+          <table class="min-w-full mt-2 text-sm lg:text-base">
+          <thead><tr><th class="p-2">Encargado</th><th class="p-2">Área</th><th class="p-2">Turno</th></tr></thead>
           <tbody>
             <tr v-for="a in doc.assignments" :key="a.encargado._id" v-if="a.encargado">
-              <td>{{ a.encargado.name }}</td>
-              <td>{{ a.area }}</td>
-              <td>{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
+              <td class="p-2">{{ a.encargado.name }}</td>
+              <td class="p-2">{{ a.area }}</td>
+              <td class="p-2">{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
             </tr>
           </tbody>
           </table>

@@ -1,6 +1,6 @@
 <template>
-  <div class="p-4 sm:p-6">
-    <h1 class="text-2xl font-bold mb-4">Gestión de Usuarios</h1>
+  <div class="p-4 sm:p-6 lg:p-8">
+    <h1 class="text-2xl lg:text-3xl font-bold mb-4">Gestión de Usuarios</h1>
     <div class="mb-4">
       <button @click="showCreateForm = true" class="px-4 py-2 bg-green-600 text-white rounded mr-2">Crear Usuario</button>
     </div>
@@ -8,7 +8,7 @@
     <div v-if="showCreateForm" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Crear Nuevo Usuario</h3>
       <form @submit.prevent="createUser">
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <input v-model="newUser.name" placeholder="Nombre" class="border p-2 rounded" required />
           <input v-model="newUser.email" type="email" placeholder="Email" class="border p-2 rounded" required />
           <input v-model="newUser.password" type="password" placeholder="Contraseña" class="border p-2 rounded" required />
@@ -29,8 +29,8 @@
             <option :value="2">Noche</option>
           </select>
         </div>
-        <div class="mt-4">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Crear</button>
+        <div class="mt-4 flex flex-col sm:flex-row gap-2">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Crear</button>
           <button @click="showCreateForm = false" class="px-4 py-2 bg-gray-600 text-white rounded">Cancelar</button>
         </div>
       </form>
@@ -39,18 +39,18 @@
     <div class="bg-white p-4 rounded shadow">
       <h3 class="font-semibold mb-2">Lista de Usuarios</h3>
       <div class="overflow-x-auto">
-        <table class="min-w-full">
-        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Área</th><th>Turno</th><th>Acciones</th></tr></thead>
+        <table class="min-w-full text-sm lg:text-base">
+        <thead><tr><th class="p-2">Nombre</th><th class="p-2">Email</th><th class="p-2">Rol</th><th class="p-2">Área</th><th class="p-2">Turno</th><th class="p-2">Acciones</th></tr></thead>
         <tbody>
           <tr v-for="user in users" :key="user._id">
-            <td>{{ user.name }}</td>
-            <td>{{ user.email }}</td>
-            <td>{{ user.role }}</td>
-            <td>{{ user.area }}</td>
-            <td>{{ user.role === 'ENCARGADO' ? (user.turno === 1 ? 'Día' : user.turno === 2 ? 'Noche' : '') : '' }}</td>
-            <td>
-              <button @click="editUser(user)" class="px-2 py-1 bg-yellow-500 text-white rounded mr-1">Editar</button>
-              <button @click="deleteUser(user._id)" class="px-2 py-1 bg-red-500 text-white rounded">Eliminar</button>
+            <td class="p-2">{{ user.name }}</td>
+            <td class="p-2">{{ user.email }}</td>
+            <td class="p-2">{{ user.role }}</td>
+            <td class="p-2">{{ user.area }}</td>
+            <td class="p-2">{{ user.role === 'ENCARGADO' ? (user.turno === 1 ? 'Día' : user.turno === 2 ? 'Noche' : '') : '' }}</td>
+            <td class="p-2 flex flex-col sm:flex-row gap-1">
+              <button @click="editUser(user)" class="px-2 py-1 bg-yellow-500 text-white rounded text-xs sm:text-sm">Editar</button>
+              <button @click="deleteUser(user._id)" class="px-2 py-1 bg-red-500 text-white rounded text-xs sm:text-sm">Eliminar</button>
             </td>
           </tr>
         </tbody>
@@ -62,25 +62,27 @@
       <div class="bg-white p-6 rounded shadow max-w-md w-full">
         <h3 class="font-semibold mb-4">Editar Usuario</h3>
         <form @submit.prevent="updateUser">
-          <input v-model="editingUser.name" placeholder="Nombre" class="border p-2 rounded w-full mb-2" required />
-          <input v-model="editingUser.email" type="email" placeholder="Email" class="border p-2 rounded w-full mb-2" required />
-          <input v-model="editingUser.password" type="password" placeholder="Nueva Contraseña (opcional)" class="border p-2 rounded w-full mb-2" />
-          <select v-model="editingUser.role" class="border p-2 rounded w-full mb-2" required>
-            <option value="ADMIN">Admin</option>
-            <option value="ENCARGADO">Encargado</option>
-            <option value="WORKER">Trabajador</option>
-          </select>
-          <select v-model="editingUser.area" class="border p-2 rounded w-full mb-2" v-if="editingUser.role !== 'ADMIN'">
-            <option value="Manufactura">Manufactura</option>
-            <option value="Envasado">Envasado</option>
-          </select>
-          <select v-model.number="editingUser.turno" class="border p-2 rounded w-full mb-2" v-if="editingUser.role === 'ENCARGADO'">
-            <option value="">Seleccionar Turno</option>
-            <option :value="1">Día</option>
-            <option :value="2">Noche</option>
-          </select>
-          <div class="flex justify-end mt-4">
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded mr-2">Actualizar</button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <input v-model="editingUser.name" placeholder="Nombre" class="border p-2 rounded" required />
+            <input v-model="editingUser.email" type="email" placeholder="Email" class="border p-2 rounded" required />
+            <input v-model="editingUser.password" type="password" placeholder="Nueva Contraseña (opcional)" class="border p-2 rounded" />
+            <select v-model="editingUser.role" class="border p-2 rounded" required>
+              <option value="ADMIN">Admin</option>
+              <option value="ENCARGADO">Encargado</option>
+              <option value="WORKER">Trabajador</option>
+            </select>
+            <select v-model="editingUser.area" class="border p-2 rounded" v-if="editingUser.role !== 'ADMIN'">
+              <option value="Manufactura">Manufactura</option>
+              <option value="Envasado">Envasado</option>
+            </select>
+            <select v-model.number="editingUser.turno" class="border p-2 rounded" v-if="editingUser.role === 'ENCARGADO'">
+              <option value="">Seleccionar Turno</option>
+              <option :value="1">Día</option>
+              <option :value="2">Noche</option>
+            </select>
+          </div>
+          <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Actualizar</button>
             <button @click="editingUser = null" class="px-4 py-2 bg-gray-600 text-white rounded">Cancelar</button>
           </div>
         </form>
