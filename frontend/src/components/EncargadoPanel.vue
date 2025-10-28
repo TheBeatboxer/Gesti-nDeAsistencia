@@ -81,11 +81,7 @@
           </div>
         </div>
       </div>
-      <div v-if="allDaysFinalized" class="mt-4 text-center">
-        <button @click="finalizePeriod" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-          Finalizar periodo
-        </button>
-      </div>
+
     </div>
 
     <!-- Panel de marcación de asistencia -->
@@ -508,9 +504,7 @@ export default {
       );
     }
 
-    const allDaysFinalized = computed(() => {
-      return assignmentDays.value.length > 0 && assignmentDays.value.every(day => day.finalized);
-    });
+
 
     function getStatusLabel(status) {
       const labels = {
@@ -551,21 +545,7 @@ export default {
       }
     }
 
-    async function finalizePeriod() {
-      try {
-        await api.post('/admin/finalize-period', { assignmentId: selectedAssignment.value._id });
-        window.showToast('Periodo finalizado exitosamente', 'success');
-        // Refresh current assignments and finalized periods
-        const currentAssignRes = await api.get('/admin/assignment/current');
-        currentAssignments.value = currentAssignRes.data;
-        selectedAssignment.value = currentAssignRes.data[0] || null;
-        generateAssignmentDays();
-        await fetchFinalizedPeriods();
-      } catch (error) {
-        console.error('Error finalizing period:', error);
-        window.showToast('Error al finalizar periodo: ' + (error.response?.data?.msg || error.message), 'error');
-      }
-    }
+
 
     async function exportSingleDayPDF(date) {
       const dayRecords = attendanceRecords.value.filter(r => 
@@ -743,11 +723,9 @@ export default {
       assignmentDays,
       selectDay,
       selectAssignment,
-      allDaysFinalized,
       getAttendanceForDay,
       showPeriodHistory,
       finalizedPeriods,
-      finalizePeriod,
       exportSingleDayPDF,
       exportToPDF,
       getStatusLabel,

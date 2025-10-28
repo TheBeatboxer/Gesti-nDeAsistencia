@@ -7,9 +7,9 @@
 - [ ] En adminController.js: agregar función `getFinalizedPeriods` para obtener periodos finalizados del encargado
 
 ## Frontend Changes
-- [ ] En EncargadoPanel.vue: agregar computed `allDaysFinalized` para verificar si todos los días están finalizados
-- [ ] Agregar botón "Finalizar periodo" cuando todos los días estén finalizados y el periodo no esté finalizado
-- [ ] Agregar método `finalizePeriod` para llamar a la API y finalizar el periodo
+- [x] REMOVED: Computed `allDaysFinalized` eliminado por problemas en el proyecto
+- [x] REMOVED: Botón "Finalizar periodo" eliminado por problemas en el proyecto
+- [x] REMOVED: Método `finalizePeriod` eliminado por problemas en el proyecto
 - [ ] Cambiar título "Historial de Asistencias" a "Historial de Periodos"
 - [ ] Reemplazar lógica de historial de asistencias individuales por historial de periodos finalizados
 - [ ] Agregar `filteredPeriods` computed para mostrar periodos finalizados
