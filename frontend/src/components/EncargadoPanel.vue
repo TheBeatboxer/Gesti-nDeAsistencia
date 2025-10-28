@@ -8,7 +8,7 @@
       <p>Periodo: {{ new Date(currentAssignment.startDate).toLocaleDateString() }} - {{ new Date(currentAssignment.endDate).toLocaleDateString() }}</p>
     </div>
 
-    <div v-if="currentAssignment" class="bg-white p-4 rounded shadow mb-4">
+    <div v-if="currentAssignment && !currentAssignment.finalized" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Días de asistencia asignados</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
         <div v-for="day in assignmentDays" :key="day.date" class="border p-2 rounded shadow hover:bg-gray-50 cursor-pointer text-center" @click="selectDay(day)">
@@ -18,6 +18,11 @@
             {{ day.finalized ? 'Finalizado' : 'Pendiente' }}
           </div>
         </div>
+      </div>
+      <div v-if="allDaysFinalized" class="mt-4 text-center">
+        <button @click="finalizePeriod" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Finalizar periodo
+        </button>
       </div>
     </div>
 
@@ -104,7 +109,7 @@
             </thead>
             <tbody>
               <tr v-for="r in getAttendanceForDay(day.date)" :key="r._id" class="hover:bg-gray-50">
-                <td class="border border-gray-300 p-2">{{ r.worker.name }}</td>
+                <td class="border border-gray-300 p-2">{{ r.worker ? r.worker.name : 'Trabajador desconocido' }}</td>
                 <td class="border border-gray-300 p-2">{{ getStatusLabel(r.status) }}</td>
                 <td class="border border-gray-300 p-2">{{ r.observation }}</td>
               </tr>
@@ -115,74 +120,39 @@
       </div>
     </div>
 
-    <!-- Panel de historial de asistencias -->
+    <!-- Panel de historial de periodos -->
     <div class="mt-8 bg-white p-6 rounded-lg shadow-lg">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold">Historial de Asistencias</h2>
-        <button 
-          @click="showAttendanceHistory = !showAttendanceHistory"
+        <h2 class="text-xl font-bold">Historial de Periodos</h2>
+        <button
+          @click="showPeriodHistory = !showPeriodHistory"
           class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
         >
-          {{ showAttendanceHistory ? 'Ocultar Historial' : 'Mostrar Historial' }}
+          {{ showPeriodHistory ? 'Ocultar Historial' : 'Mostrar Historial' }}
         </button>
       </div>
 
-      <div v-if="showAttendanceHistory">
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
-            <input 
-              type="date" 
-              v-model="dateFilter.startDate"
-              class="w-full border rounded-md px-3 py-2"
-              :max="dateFilter.endDate || undefined"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
-            <input 
-              type="date" 
-              v-model="dateFilter.endDate"
-              class="w-full border rounded-md px-3 py-2"
-              :min="dateFilter.startDate || undefined"
-            >
-          </div>
-          <div class="flex items-end">
-            <button 
-              @click="filterAttendance"
-              class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Filtrar
-            </button>
-            <button 
-              @click="resetFilter"
-              class="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-            >
-              Resetear
-            </button>
-          </div>
-        </div>
-
+      <div v-if="showPeriodHistory">
         <div class="overflow-x-auto">
           <table class="min-w-full bg-white border rounded-lg text-sm lg:text-base">
             <thead>
               <tr class="bg-gray-100">
-                <th class="border p-3 text-left">Fecha</th>
-                <th class="border p-3 text-left">Trabajador</th>
-                <th class="border p-3 text-left">Estado</th>
-                <th class="border p-3 text-left">Observación</th>
+                <th class="border p-3 text-left">Periodo</th>
+                <th class="border p-3 text-left">Área</th>
+                <th class="border p-3 text-left">Turno</th>
+                <th class="border p-3 text-left">Finalizado el</th>
                 <th class="border p-3 text-left">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="record in filteredAttendanceRecords" :key="record._id" class="hover:bg-gray-50">
-                <td class="border p-3">{{ new Date(record.date).toLocaleDateString() }}</td>
-                <td class="border p-3">{{ record.worker.name }}</td>
-                <td class="border p-3">{{ getStatusLabel(record.status) }}</td>
-                <td class="border p-3">{{ record.observation }}</td>
+              <tr v-for="period in finalizedPeriods" :key="period._id" class="hover:bg-gray-50">
+                <td class="border p-3">{{ new Date(period.startDate).toLocaleDateString() }} - {{ new Date(period.endDate).toLocaleDateString() }}</td>
+                <td class="border p-3">{{ getAssignedAreaForPeriod(period) }}</td>
+                <td class="border p-3">{{ getAssignedTurnoLabelForPeriod(period) }}</td>
+                <td class="border p-3">{{ new Date(period.finalizedAt).toLocaleDateString() }}</td>
                 <td class="border p-3">
                   <button
-                    @click="exportSingleDayPDF(record.date)"
+                    @click="exportPeriodPDF(period)"
                     class="bg-blue-500 hover:bg-blue-700 text-white text-xs sm:text-sm py-1 px-2 rounded"
                   >
                     Exportar PDF
@@ -211,11 +181,8 @@ export default {
     const attendance = reactive({});
     const selectedDay = ref(null);
     const assignmentDays = ref([]);
-    const showAttendanceHistory = ref(false);
-    const dateFilter = reactive({
-      startDate: '',
-      endDate: ''
-    });
+    const showPeriodHistory = ref(false);
+    const finalizedPeriods = ref([]);
 
     onMounted(async ()=> {
       try {
@@ -223,6 +190,7 @@ export default {
         currentAssignment.value = currentAssignRes.data;
         generateAssignmentDays();
         await fetchWorkers();
+        await fetchFinalizedPeriods();
       } catch (error) {
         console.error('Error fetching current assignment:', error);
         window.showToast('No tienes asignación actual o error al cargar', 'error');
@@ -404,8 +372,8 @@ export default {
       );
     }
 
-    const finalizedDays = computed(() => {
-      return assignmentDays.value.filter(day => day.finalized);
+    const allDaysFinalized = computed(() => {
+      return assignmentDays.value.length > 0 && assignmentDays.value.every(day => day.finalized);
     });
 
     function getStatusLabel(status) {
@@ -437,27 +405,27 @@ export default {
       }
     }
 
-    const filteredAttendanceRecords = computed(() => {
-      if (!dateFilter.startDate && !dateFilter.endDate) {
-        return attendanceRecords.value.filter(r => r.finalized);
+    async function fetchFinalizedPeriods() {
+      try {
+        const res = await api.get('/admin/finalized-periods');
+        finalizedPeriods.value = res.data;
+      } catch (error) {
+        console.error('Error fetching finalized periods:', error);
       }
-
-      return attendanceRecords.value.filter(record => {
-        const recordDate = new Date(record.date).toISOString().split('T')[0];
-        const isAfterStart = !dateFilter.startDate || recordDate >= dateFilter.startDate;
-        const isBeforeEnd = !dateFilter.endDate || recordDate <= dateFilter.endDate;
-        return record.finalized && isAfterStart && isBeforeEnd;
-      });
-    });
-
-    function filterAttendance() {
-      fetchAttendance();
     }
 
-    function resetFilter() {
-      dateFilter.startDate = '';
-      dateFilter.endDate = '';
-      fetchAttendance();
+    async function finalizePeriod() {
+      try {
+        await api.post('/admin/finalize-period');
+        window.showToast('Periodo finalizado exitosamente', 'success');
+        // Refresh current assignment and finalized periods
+        const currentAssignRes = await api.get('/admin/assignment/current');
+        currentAssignment.value = currentAssignRes.data;
+        await fetchFinalizedPeriods();
+      } catch (error) {
+        console.error('Error finalizing period:', error);
+        window.showToast('Error al finalizar periodo: ' + (error.response?.data?.msg || error.message), 'error');
+      }
     }
 
     async function exportSingleDayPDF(date) {
@@ -516,30 +484,102 @@ export default {
       }
     }
 
-    return { 
-      workers, 
-      currentAssignment, 
-      userId, 
-      attendanceRecords, 
-      attendance, 
-      markForWorker, 
-      markAllPresent, 
-      finalizeAttendance, 
-      getAssignedArea, 
-      getAssignedTurnoLabel, 
-      selectedDay, 
-      assignmentDays, 
+    function getAssignedAreaForPeriod(period) {
+      const a = findEncargadoAssignment(period, userId.value);
+      return a ? a.area : 'No asignado';
+    }
+
+    function getAssignedTurnoLabelForPeriod(period) {
+      const a = findEncargadoAssignment(period, userId.value);
+      if (!a || !a.turno) return 'No asignado';
+      return Number(a.turno) === 1 ? 'Día' : 'Noche';
+    }
+
+    async function exportPeriodPDF(period) {
+      // Get all attendance records for this period
+      const periodAttendances = attendanceRecords.value.filter(r => {
+        const recordDate = new Date(r.date);
+        return recordDate >= new Date(period.startDate) && recordDate <= new Date(period.endDate) && r.finalized;
+      });
+
+      if (periodAttendances.length === 0) return;
+
+      const periodStr = `${new Date(period.startDate).toLocaleDateString()} - ${new Date(period.endDate).toLocaleDateString()}`;
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div class="p-4">
+          <h2 class="text-xl font-bold mb-4">Registro de Asistencia - Periodo ${periodStr}</h2>
+          <div class="mb-4">
+            <h3 class="font-medium">Datos del Encargado:</h3>
+            <p>Área: ${getAssignedAreaForPeriod(period)}</p>
+            <p>Turno: ${getAssignedTurnoLabelForPeriod(period)}</p>
+          </div>
+          <table class="w-full border-collapse border">
+            <thead>
+              <tr>
+                <th class="border p-2">Fecha</th>
+                <th class="border p-2">Trabajador</th>
+                <th class="border p-2">Estado</th>
+                <th class="border p-2">Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${periodAttendances.map(r => `
+                <tr>
+                  <td class="border p-2">${new Date(r.date).toLocaleDateString()}</td>
+                  <td class="border p-2">${r.worker ? r.worker.name : 'Trabajador desconocido'}</td>
+                  <td class="border p-2">${getStatusLabel(r.status)}</td>
+                  <td class="border p-2">${r.observation}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      const opt = {
+        margin: 1,
+        filename: `asistencia-periodo-${periodStr.replace(/\//g, '-')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      try {
+        window.showToast('Generando PDF...', 'info');
+        await html2pdf().set(opt).from(element).save();
+        window.showToast('PDF generado exitosamente', 'success');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        window.showToast('Error al generar PDF', 'error');
+      }
+    }
+
+    return {
+      workers,
+      currentAssignment,
+      userId,
+      attendanceRecords,
+      attendance,
+      markForWorker,
+      markAllPresent,
+      finalizeAttendance,
+      getAssignedArea,
+      getAssignedTurnoLabel,
+      selectedDay,
+      assignmentDays,
       selectDay,
-      finalizedDays,
+      allDaysFinalized,
       getAttendanceForDay,
-      showAttendanceHistory,
-      dateFilter,
-      filteredAttendanceRecords,
-      filterAttendance,
-      resetFilter,
+      showPeriodHistory,
+      finalizedPeriods,
+      finalizePeriod,
       exportSingleDayPDF,
       exportToPDF,
-      getStatusLabel
+      getStatusLabel,
+      getAssignedAreaForPeriod,
+      getAssignedTurnoLabelForPeriod,
+      exportPeriodPDF
     };
   }
 };

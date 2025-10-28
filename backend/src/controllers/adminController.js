@@ -132,7 +132,7 @@ exports.getCurrentAssignment = async (req, res) => {
 
   } catch (err) {
     console.error('Error en getCurrentAssignment:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       msg: 'Error interno del servidor',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
@@ -186,6 +186,79 @@ exports.getAllAssignments = async (req, res) => {
       return doc;
     });
     res.json(sanitized);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+// Finalize current period for encargado
+exports.finalizePeriod = async (req, res) => {
+  try {
+    // Get current assignment
+    const today = normalizeDate(new Date());
+    const assignment = await Assignment.findOne({
+      startDate: { $lte: today },
+      endDate: { $gte: today }
+    });
+
+    if (!assignment) {
+      return res.status(404).json({ msg: 'No current assignment found' });
+    }
+
+    // Check if user is assigned as encargado in this assignment
+    const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
+    if (!encAssign && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ msg: 'You are not assigned for this period' });
+    }
+
+    // Check if all days in the period are finalized for this encargado's area and turno
+    const Attendance = require('../models/Attendance');
+    const startDate = assignment.startDate;
+    const endDate = assignment.endDate;
+
+    // Get all dates in the period
+    const dates = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      dates.push(new Date(d));
+    }
+
+    // Check attendance for each date
+    for (const date of dates) {
+      const normalizedDate = normalizeDate(date);
+      const attendances = await Attendance.find({
+        date: normalizedDate,
+        area: encAssign.area,
+        turno: encAssign.turno,
+        finalized: true
+      });
+
+      const workers = await User.find({ role: 'WORKER', area: encAssign.area, turno: encAssign.turno });
+      if (attendances.length < workers.length) {
+        return res.status(400).json({ msg: `Not all days are finalized. Missing attendance for ${new Date(date).toLocaleDateString()}` });
+      }
+    }
+
+    // Mark assignment as finalized
+    assignment.finalized = true;
+    assignment.finalizedBy = req.user._id;
+    assignment.finalizedAt = new Date();
+    await assignment.save();
+
+    res.json({ msg: 'Period finalized successfully', assignment });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+// Get finalized periods for encargado
+exports.getFinalizedPeriods = async (req, res) => {
+  try {
+    const assignments = await Assignment.find({
+      finalized: true,
+      assignments: { $elemMatch: { encargado: req.user._id } }
+    }).sort({ finalizedAt: -1 }).populate('assignments.encargado', 'name email area turno').populate('finalizedBy', 'name');
+
+    res.json(assignments);
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }

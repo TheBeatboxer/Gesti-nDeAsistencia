@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const moment = require('moment-timezone');
 const User = require('../models/User');
 const Assignment = require('../models/Assignment');
 
@@ -64,15 +65,24 @@ async function seed() {
     }
     console.log('Workers created');
 
+    // Helper: normalize date to 00:00:00 in America/Lima timezone
+    function normalizeDate(date) {
+      const limaTZ = 'America/Lima';
+      if (typeof date === 'string') {
+        return moment.tz(date, limaTZ).startOf('day').toDate();
+      }
+      return moment(date).tz(limaTZ).startOf('day').toDate();
+    }
+
     // Create a current week assignment
-    const today = new Date();
-    const startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    const day = startDate.getUTCDay(); // 0 (Sun) - 6 (Sat)
+    const today = normalizeDate(new Date());
+    const startDate = new Date(today);
+    const day = startDate.getDay(); // 0 (Sun) - 6 (Sat)
     const diff = (day === 0 ? -6 : 1) - day;
-    startDate.setUTCDate(startDate.getUTCDate() + diff);
+    startDate.setDate(startDate.getDate() + diff);
     const endDate = new Date(startDate);
-    endDate.setUTCDate(startDate.getUTCDate() + 6);
-    endDate.setUTCHours(23, 59, 59, 999);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
 
     const assignment = new Assignment({
       startDate,

@@ -8,6 +8,9 @@ const AssignmentSchema = new mongoose.Schema({
     area: { type: String, enum: ['Manufactura','Envasado'], required: true },
     turno: { type: Number, enum: [1,2], required: true } // 1=Dia, 2=Noche
   }],
+  finalized: { type: Boolean, default: false }, // new field to mark if the entire period is finalized
+  finalizedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // encargado who finalized
+  finalizedAt: { type: Date }, // when it was finalized
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   createdAt: { type: Date, default: Date.now }
 });
