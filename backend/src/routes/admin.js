@@ -13,7 +13,6 @@ router.post('/assignment', authMiddleware, authorizeRoles('ADMIN'), adminControl
 router.get('/assignment/:date', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getAssignmentForDate);
 router.delete('/assignment/:id', authMiddleware, authorizeRoles('ADMIN'), adminController.deleteAssignment);
 
-router.post('/finalize-period', authMiddleware, authorizeRoles('ENCARGADO','ADMIN'), adminController.finalizePeriod);
 router.get('/finalized-periods', authMiddleware, authorizeRoles('ENCARGADO','ADMIN'), adminController.getFinalizedPeriods);
 
 router.get('/workers', authMiddleware, authorizeRoles('ADMIN','ENCARGADO'), adminController.getWorkers);

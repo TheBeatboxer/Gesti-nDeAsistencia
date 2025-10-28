@@ -460,6 +460,8 @@ export default {
       }
     }
 
+
+
     async function fetchAttendance(){
       try {
         const res = await api.get('/attendance/report');

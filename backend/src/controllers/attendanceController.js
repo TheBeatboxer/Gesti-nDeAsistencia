@@ -37,9 +37,7 @@ exports.markAttendance = async (req, res) => {
     const encAssign = assignment.assignments.find(a => a.encargado.toString() === req.user._id.toString());
     if (!encAssign && req.user.role !== 'ADMIN') return res.status(403).json({ msg: 'You are not assigned for this date' });
 
-    // Check if attendance for this date is already finalized
-    const existingFinalized = await Attendance.findOne({ date: d, finalized: true });
-    if (existingFinalized) return res.status(400).json({ msg: 'Attendance for this date is already finalized' });
+
 
     // Check worker exists
     const worker = await User.findById(workerId);
@@ -115,7 +113,8 @@ exports.finalizeAttendance = async (req, res) => {
       return res.status(400).json({ msg: 'Not all workers have attendance marked' });
     }
 
-    // Finalize all attendances for this date and area/turno
+
+    // Mark attendance as finalized (keeping for compatibility but not blocking marking)
     const updateResult = await Attendance.updateMany(
       { date: d, worker: { $in: workerIds } },
       { finalized: true }

@@ -10,6 +10,7 @@
 - [x] REMOVED: Computed `allDaysFinalized` eliminado por problemas en el proyecto
 - [x] REMOVED: Botón "Finalizar periodo" eliminado por problemas en el proyecto
 - [x] REMOVED: Método `finalizePeriod` eliminado por problemas en el proyecto
+- [ ] Mantener función `finalizeAttendance` para finalizar asistencia diaria (no periodo completo)
 - [ ] Cambiar título "Historial de Asistencias" a "Historial de Periodos"
 - [ ] Reemplazar lógica de historial de asistencias individuales por historial de periodos finalizados
 - [ ] Agregar `filteredPeriods` computed para mostrar periodos finalizados
