@@ -1,5 +1,5 @@
  <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <h1 class="text-2xl font-bold mb-4">Admin Dashboard</h1>
     <div class="mb-4">
   <button @click="toggleAssignForm" class="px-4 py-2 bg-indigo-600 text-white rounded mr-2">Asignaciones</button>
@@ -29,15 +29,15 @@
     </div>
 
     <!-- Formulario separado: solo aparece cuando el usuario pulsa Nuevo o Editar -->
-      <div v-if="newAssignmentMode" class="bg-white p-4 rounded shadow mb-4">
+  <div v-if="newAssignmentMode" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Crear/Editar Asignación</h3>
       <label>Fecha de inicio</label>
       <input v-model="newAssignment.startDate" type="date" class="border p-2 rounded mb-2 w-full" />
       <label>Fecha de fin</label>
       <input v-model="newAssignment.endDate" type="date" class="border p-2 rounded mb-2 w-full" />
 
-      <div v-for="(a, idx) in newAssignment.assignments" :key="idx" class="mb-2">
-        <select v-model="a.encargado" @change="setTurnoFromEncargado(a)" class="border p-2 rounded mr-2">
+  <div v-for="(a, idx) in newAssignment.assignments" :key="idx" class="mb-2">
+  <select v-model="a.encargado" @change="setTurnoFromEncargado(a)" class="border p-2 rounded mr-2">
           <option value="">Seleccionar Encargado</option>
           <option v-for="e in encargados" :value="e._id">{{ e.name }}</option>
         </select>
@@ -62,7 +62,8 @@
 
     <div v-if="assignment" class="bg-white p-4 rounded shadow">
       <h2 class="font-semibold mb-2">Asignación para {{ weekString }}</h2>
-      <table class="w-full">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
         <thead><tr><th>Encargado</th><th>Área</th><th>Turno</th></tr></thead>
         <tbody>
           <tr v-for="a in assignment.assignments" :key="a.encargado._id">
@@ -71,7 +72,8 @@
             <td>{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
 
     <div v-if="showHistory" class="mt-6 bg-white p-4 rounded shadow">
@@ -79,7 +81,8 @@
       <div v-if="assignmentsHistory.length === 0" class="text-gray-500">No hay asignaciones registradas aún.</div>
       <div v-for="doc in assignmentsHistory" :key="doc._id" class="mb-4 border p-3 rounded">
         <div class="font-medium">Periodo: {{ new Date(doc.startDate).toLocaleDateString() }} - {{ new Date(doc.endDate).toLocaleDateString() }}</div>
-        <table class="w-full mt-2">
+        <div class="overflow-x-auto">
+          <table class="min-w-full mt-2">
           <thead><tr><th>Encargado</th><th>Área</th><th>Turno</th></tr></thead>
           <tbody>
             <tr v-for="a in doc.assignments" :key="a.encargado._id" v-if="a.encargado">
@@ -88,7 +91,8 @@
               <td>{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
             </tr>
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   </div>

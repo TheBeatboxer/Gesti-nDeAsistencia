@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <h1 class="text-2xl font-bold mb-4">Gestión de Usuarios</h1>
     <div class="mb-4">
       <button @click="showCreateForm = true" class="px-4 py-2 bg-green-600 text-white rounded mr-2">Crear Usuario</button>
@@ -8,7 +8,7 @@
     <div v-if="showCreateForm" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Crear Nuevo Usuario</h3>
       <form @submit.prevent="createUser">
-        <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input v-model="newUser.name" placeholder="Nombre" class="border p-2 rounded" required />
           <input v-model="newUser.email" type="email" placeholder="Email" class="border p-2 rounded" required />
           <input v-model="newUser.password" type="password" placeholder="Contraseña" class="border p-2 rounded" required />
@@ -38,7 +38,8 @@
 
     <div class="bg-white p-4 rounded shadow">
       <h3 class="font-semibold mb-2">Lista de Usuarios</h3>
-      <table class="w-full">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
         <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Área</th><th>Turno</th><th>Acciones</th></tr></thead>
         <tbody>
           <tr v-for="user in users" :key="user._id">
@@ -53,7 +54,8 @@
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
 
     <div v-if="editingUser" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <h1 class="text-2xl mb-4">Panel Encargado</h1>
     <div v-if="currentAssignment" class="bg-blue-100 p-4 rounded shadow mb-4">
       <h3 class="font-semibold">Tu asignación actual</h3>
@@ -25,7 +25,8 @@
     <div v-if="selectedDay" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Marcar asistencia para {{ selectedDay.label }} - {{ selectedDay.dateFormatted }}</h3>
       <p class="text-sm text-gray-600 mb-4">Trabajadores asignados a tu área</p>
-      <table class="w-full border-collapse border border-gray-300">
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse border border-gray-300">
         <thead>
           <tr class="bg-gray-200">
             <th class="border border-gray-300 p-2">Trabajador</th>
@@ -62,7 +63,8 @@
               </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
       <div class="mt-4 flex gap-4">
         <button @click="markAllPresent" class="px-4 py-2 bg-green-600 text-white rounded">
           Marcar todos como Presentes
@@ -91,7 +93,8 @@
             <p>Área: {{ getAssignedArea() }}</p>
             <p>Turno: {{ getAssignedTurnoLabel() }}</p>
           </div>
-          <table class="w-full border-collapse border border-gray-300 bg-white">
+          <div class="overflow-x-auto">
+            <table class="min-w-full border-collapse border border-gray-300 bg-white">
             <thead>
               <tr class="bg-gray-200">
                 <th class="border border-gray-300 p-2">Trabajador</th>
@@ -106,7 +109,8 @@
                 <td class="border border-gray-300 p-2">{{ r.observation }}</td>
               </tr>
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -261,7 +265,7 @@ export default {
           workers.value = workersRes.data;
         }
         workers.value.forEach(w => {
-          attendance[w._id] = { status: 'P', observation: '' };
+          attendance[w._id] = { status: 'P', observation: '', isMarked: false };
         });
       } catch (error) {
         console.error('Error fetching workers:', error);
@@ -349,7 +353,7 @@ export default {
         
         // Reset attendance y selectedDay
         workers.value.forEach(w => {
-          attendance[w._id] = { status: 'P', observation: '' };
+          attendance[w._id] = { status: 'P', observation: '', isMarked: false };
         });
         selectedDay.value = null;
       } catch (error) {

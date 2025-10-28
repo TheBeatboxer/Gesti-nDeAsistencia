@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="p-4 sm:p-6">
     <h1 class="text-2xl font-bold text-gray-800 mb-4">Panel de Trabajador</h1>
     <p class="mt-4 text-gray-600 mb-4">Bienvenido al sistema de control de asistencia.</p>
 
@@ -12,7 +12,8 @@
         <input v-model="toDate" type="date" class="border p-2 rounded mr-2" />
         <button @click="fetchAttendance" class="px-4 py-2 bg-blue-500 text-white rounded">Buscar</button>
       </div>
-      <table v-if="attendanceRecords.length > 0" class="w-full">
+      <div v-if="attendanceRecords.length > 0" class="overflow-x-auto">
+        <table class="min-w-full">
         <thead>
           <tr>
             <th>Fecha</th>
@@ -33,7 +34,8 @@
             <td>{{ r.recordedBy.name }}</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
       <p v-else>No hay registros de asistencia.</p>
     </div>
   </div>
