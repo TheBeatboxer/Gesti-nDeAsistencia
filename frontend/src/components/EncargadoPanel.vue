@@ -21,6 +21,7 @@
       </div>
     </div>
 
+    <!-- Panel de marcación de asistencia -->
     <div v-if="selectedDay" class="bg-white p-4 rounded shadow mb-4">
       <h3 class="font-semibold mb-2">Marcar asistencia para {{ selectedDay.label }} - {{ selectedDay.dateFormatted }}</h3>
       <p class="text-sm text-gray-600 mb-4">Trabajadores asignados a tu área</p>
@@ -37,7 +38,7 @@
           <tr v-for="w in workers" :key="w._id" class="hover:bg-gray-50">
             <td class="border border-gray-300 p-2">{{ w.name }} ({{ w.area }} - Turno {{ w.turno }})</td>
             <td class="border border-gray-300 p-2">
-              <select v-model="attendance[w._id].status" class="border p-1 rounded" :disabled="selectedDay.finalized">
+              <select v-model="attendance[w._id].status" class="border p-1 rounded">
                 <option value="">Seleccionar</option>
                 <option value="P">Presente</option>
                 <option value="T">Tardanza</option>
@@ -45,48 +46,160 @@
               </select>
             </td>
             <td class="border border-gray-300 p-2">
-              <input v-model="attendance[w._id].observation" placeholder="Observación" class="border p-1 w-full rounded" :disabled="selectedDay.finalized" />
+              <input v-model="attendance[w._id].observation" placeholder="Observación" class="border p-1 w-full rounded" />
             </td>
-            <td class="border border-gray-300 p-2">
-              <button @click="markForWorker(w._id)" class="px-3 py-1 bg-blue-500 text-white rounded" :disabled="selectedDay.finalized">Marcar</button>
-            </td>
+                          <td class="border border-gray-300 p-2">
+                <button 
+                  @click="markForWorker(w._id)" 
+                  class="px-3 py-1 rounded text-white"
+                  :class="{
+                    'bg-green-500 hover:bg-green-600': attendance[w._id].isMarked,
+                    'bg-blue-500 hover:bg-blue-600': !attendance[w._id].isMarked
+                  }"
+                >
+                  {{ attendance[w._id].isMarked ? 'Marcado' : 'Marcar' }}
+                </button>
+              </td>
           </tr>
         </tbody>
       </table>
-      <button @click="markAllPresent" class="mt-4 px-4 py-2 bg-green-600 text-white rounded" :disabled="selectedDay.finalized">Marcar todos como Presentes</button>
-      <button @click="finalizeAttendance" class="mt-4 ml-4 px-4 py-2 bg-red-600 text-white rounded" :disabled="selectedDay.finalized">Finalizar asistencia para este día</button>
+      <div class="mt-4 flex gap-4">
+        <button @click="markAllPresent" class="px-4 py-2 bg-green-600 text-white rounded">
+          Marcar todos como Presentes
+        </button>
+        <button @click="finalizeAttendance" class="px-4 py-2 bg-red-600 text-white rounded">
+          Finalizar asistencia para este día
+        </button>
+      </div>
     </div>
 
-    <div class="bg-gray-100 p-4 rounded shadow">
-      <h3 class="font-semibold mb-2">Registros de asistencia del período asignado</h3>
-      <table class="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border border-gray-300 p-2">Fecha</th>
-            <th class="border border-gray-300 p-2">Trabajador</th>
-            <th class="border border-gray-300 p-2">Estado</th>
-            <th class="border border-gray-300 p-2">Observación</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in attendanceRecords" :key="r._id" class="hover:bg-gray-50">
-            <td class="border border-gray-300 p-2">{{ new Date(r.date).toLocaleDateString() }}</td>
-            <td class="border border-gray-300 p-2">{{ r.worker.name }}</td>
-            <td class="border border-gray-300 p-2">{{ r.status }}</td>
-            <td class="border border-gray-300 p-2">{{ r.observation }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- Registros de asistencia finalizados -->
+    <div v-if="!selectedDay" class="space-y-4">
+      <div v-for="day in assignmentDays.filter(d => d.finalized)" :key="day.date" class="bg-gray-100 p-4 rounded shadow">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-semibold">Registros de asistencia - {{ day.label }} ({{ day.dateFormatted }})</h3>
+          <button 
+            @click="exportToPDF(day)"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Exportar a PDF
+          </button>
+        </div>
+        <div :id="'attendance-table-'+day.date">
+          <div class="mb-4">
+            <h4 class="font-medium">Datos del Encargado:</h4>
+            <p>Área: {{ getAssignedArea() }}</p>
+            <p>Turno: {{ getAssignedTurnoLabel() }}</p>
+          </div>
+          <table class="w-full border-collapse border border-gray-300 bg-white">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="border border-gray-300 p-2">Trabajador</th>
+                <th class="border border-gray-300 p-2">Estado</th>
+                <th class="border border-gray-300 p-2">Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in getAttendanceForDay(day.date)" :key="r._id" class="hover:bg-gray-50">
+                <td class="border border-gray-300 p-2">{{ r.worker.name }}</td>
+                <td class="border border-gray-300 p-2">{{ getStatusLabel(r.status) }}</td>
+                <td class="border border-gray-300 p-2">{{ r.observation }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de historial de asistencias -->
+    <div class="mt-8 bg-white p-6 rounded-lg shadow-lg">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">Historial de Asistencias</h2>
+        <button 
+          @click="showAttendanceHistory = !showAttendanceHistory"
+          class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+        >
+          {{ showAttendanceHistory ? 'Ocultar Historial' : 'Mostrar Historial' }}
+        </button>
+      </div>
+
+      <div v-if="showAttendanceHistory">
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
+            <input 
+              type="date" 
+              v-model="dateFilter.startDate"
+              class="w-full border rounded-md px-3 py-2"
+              :max="dateFilter.endDate || undefined"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
+            <input 
+              type="date" 
+              v-model="dateFilter.endDate"
+              class="w-full border rounded-md px-3 py-2"
+              :min="dateFilter.startDate || undefined"
+            >
+          </div>
+          <div class="flex items-end">
+            <button 
+              @click="filterAttendance"
+              class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Filtrar
+            </button>
+            <button 
+              @click="resetFilter"
+              class="ml-2 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Resetear
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full bg-white border rounded-lg">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border p-3 text-left">Fecha</th>
+                <th class="border p-3 text-left">Trabajador</th>
+                <th class="border p-3 text-left">Estado</th>
+                <th class="border p-3 text-left">Observación</th>
+                <th class="border p-3 text-left">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="record in filteredAttendanceRecords" :key="record._id" class="hover:bg-gray-50">
+                <td class="border p-3">{{ new Date(record.date).toLocaleDateString() }}</td>
+                <td class="border p-3">{{ record.worker.name }}</td>
+                <td class="border p-3">{{ getStatusLabel(record.status) }}</td>
+                <td class="border p-3">{{ record.observation }}</td>
+                <td class="border p-3">
+                  <button 
+                    @click="exportSingleDayPDF(record.date)"
+                    class="bg-blue-500 hover:bg-blue-700 text-white text-sm py-1 px-2 rounded"
+                  >
+                    Exportar PDF
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import api from '../api';
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
+import html2pdf from 'html2pdf.js';
 
 export default {
-  setup(){
+  setup() {
     const workers = ref([]);
     const currentAssignment = ref(null);
     const userId = ref(localStorage.getItem('userId'));
@@ -94,6 +207,11 @@ export default {
     const attendance = reactive({});
     const selectedDay = ref(null);
     const assignmentDays = ref([]);
+    const showAttendanceHistory = ref(false);
+    const dateFilter = reactive({
+      startDate: '',
+      endDate: ''
+    });
 
     onMounted(async ()=> {
       try {
@@ -143,7 +261,7 @@ export default {
           workers.value = workersRes.data;
         }
         workers.value.forEach(w => {
-          attendance[w._id] = { status: '', observation: '' };
+          attendance[w._id] = { status: 'P', observation: '' };
         });
       } catch (error) {
         console.error('Error fetching workers:', error);
@@ -152,10 +270,13 @@ export default {
     }
 
     async function selectDay(day){
+      if (day.finalized) {
+        return;
+      }
       selectedDay.value = day;
-      // Reset attendance for all workers
+      // Inicializar todos los trabajadores como Presentes por defecto
       workers.value.forEach(w => {
-        attendance[w._id] = { status: '', observation: '' };
+        attendance[w._id] = { status: 'P', observation: '', isMarked: false };
       });
       // Load existing attendance for this day if any
       const existing = attendanceRecords.value.filter(r => new Date(r.date).toISOString().split('T')[0] === day.date);
@@ -163,6 +284,7 @@ export default {
         if(attendance[r.worker._id]){
           attendance[r.worker._id].status = r.status;
           attendance[r.worker._id].observation = r.observation;
+          attendance[r.worker._id].isMarked = true;
         }
       });
       // Check if finalized
@@ -176,6 +298,7 @@ export default {
       try {
         const payload = { date: selectedDay.value.date, workerId, status: att.status, observation: att.observation };
         await api.post('/attendance/mark', payload);
+        attendance[workerId].isMarked = true;
         window.showToast('Marcación guardada para ' + workers.value.find(w => w._id === workerId).name, 'success');
         fetchAttendance();
       } catch (error) {
@@ -197,6 +320,7 @@ export default {
         workers.value.forEach(w => {
           attendance[w._id].status = 'P';
           attendance[w._id].observation = '';
+          attendance[w._id].isMarked = true;
         });
       } catch (error) {
         console.error('Error marking all present:', error);
@@ -213,11 +337,19 @@ export default {
       try {
         await api.post('/attendance/finalize', { date: selectedDay.value.date });
         window.showToast('Asistencia finalizada para ' + selectedDay.value.label, 'success');
-        selectedDay.value.finalized = true;
-        fetchAttendance();
-        // Reset attendance for next day
+        
+        // Actualizar el estado del día en assignmentDays
+        const dayToUpdate = assignmentDays.value.find(d => d.date === selectedDay.value.date);
+        if (dayToUpdate) {
+          dayToUpdate.finalized = true;
+        }
+        
+        // Actualizar registros de asistencia
+        await fetchAttendance();
+        
+        // Reset attendance y selectedDay
         workers.value.forEach(w => {
-          attendance[w._id] = { status: '', observation: '' };
+          attendance[w._id] = { status: 'P', observation: '' };
         });
         selectedDay.value = null;
       } catch (error) {
@@ -262,7 +394,149 @@ export default {
       return Number(a.turno) === 1 ? 'Día' : 'Noche';
     }
 
-    return { workers, currentAssignment, userId, attendanceRecords, attendance, markForWorker, markAllPresent, finalizeAttendance, getAssignedArea, getAssignedTurnoLabel, selectedDay, assignmentDays, selectDay };
+    function getAttendanceForDay(date) {
+      return attendanceRecords.value.filter(r => 
+        new Date(r.date).toISOString().split('T')[0] === date && r.finalized
+      );
+    }
+
+    const finalizedDays = computed(() => {
+      return assignmentDays.value.filter(day => day.finalized);
+    });
+
+    function getStatusLabel(status) {
+      const labels = {
+        'P': 'Presente',
+        'T': 'Tardanza',
+        'F': 'Falta'
+      };
+      return labels[status] || status;
+    }
+
+    async function exportToPDF(day) {
+      const element = document.getElementById('attendance-table-'+day.date);
+      const opt = {
+        margin: 1,
+        filename: `asistencia-${day.dateFormatted}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      try {
+        window.showToast('Generando PDF...', 'info');
+        await html2pdf().set(opt).from(element).save();
+        window.showToast('PDF generado exitosamente', 'success');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        window.showToast('Error al generar PDF', 'error');
+      }
+    }
+
+    const filteredAttendanceRecords = computed(() => {
+      if (!dateFilter.startDate && !dateFilter.endDate) {
+        return attendanceRecords.value.filter(r => r.finalized);
+      }
+
+      return attendanceRecords.value.filter(record => {
+        const recordDate = new Date(record.date).toISOString().split('T')[0];
+        const isAfterStart = !dateFilter.startDate || recordDate >= dateFilter.startDate;
+        const isBeforeEnd = !dateFilter.endDate || recordDate <= dateFilter.endDate;
+        return record.finalized && isAfterStart && isBeforeEnd;
+      });
+    });
+
+    function filterAttendance() {
+      fetchAttendance();
+    }
+
+    function resetFilter() {
+      dateFilter.startDate = '';
+      dateFilter.endDate = '';
+      fetchAttendance();
+    }
+
+    async function exportSingleDayPDF(date) {
+      const dayRecords = attendanceRecords.value.filter(r => 
+        new Date(r.date).toISOString().split('T')[0] === new Date(date).toISOString().split('T')[0]
+      );
+      
+      if (dayRecords.length === 0) return;
+
+      const dateStr = new Date(date).toLocaleDateString();
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div class="p-4">
+          <h2 class="text-xl font-bold mb-4">Registro de Asistencia - ${dateStr}</h2>
+          <div class="mb-4">
+            <h3 class="font-medium">Datos del Encargado:</h3>
+            <p>Área: ${getAssignedArea()}</p>
+            <p>Turno: ${getAssignedTurnoLabel()}</p>
+          </div>
+          <table class="w-full border-collapse border">
+            <thead>
+              <tr>
+                <th class="border p-2">Trabajador</th>
+                <th class="border p-2">Estado</th>
+                <th class="border p-2">Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dayRecords.map(r => `
+                <tr>
+                  <td class="border p-2">${r.worker.name}</td>
+                  <td class="border p-2">${getStatusLabel(r.status)}</td>
+                  <td class="border p-2">${r.observation}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      const opt = {
+        margin: 1,
+        filename: `asistencia-${dateStr}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      try {
+        window.showToast('Generando PDF...', 'info');
+        await html2pdf().set(opt).from(element).save();
+        window.showToast('PDF generado exitosamente', 'success');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        window.showToast('Error al generar PDF', 'error');
+      }
+    }
+
+    return { 
+      workers, 
+      currentAssignment, 
+      userId, 
+      attendanceRecords, 
+      attendance, 
+      markForWorker, 
+      markAllPresent, 
+      finalizeAttendance, 
+      getAssignedArea, 
+      getAssignedTurnoLabel, 
+      selectedDay, 
+      assignmentDays, 
+      selectDay,
+      finalizedDays,
+      getAttendanceForDay,
+      showAttendanceHistory,
+      dateFilter,
+      filteredAttendanceRecords,
+      filterAttendance,
+      resetFilter,
+      exportSingleDayPDF,
+      exportToPDF,
+      getStatusLabel
+    };
   }
 };
 </script>
