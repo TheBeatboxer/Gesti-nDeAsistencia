@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Assignment = require('../models/Assignment');
 const User = require('../models/User');
+const Attendance = require('../models/Attendance');
 const moment = require('moment-timezone');
 
 // Asegurarse de que el modelo User esté registrado
@@ -75,60 +76,60 @@ exports.getCurrentAssignment = async (req, res) => {
   try {
     // 1. Normalizar la fecha actual
     const today = normalizeDate(new Date());
-    console.log('Buscando asignación para fecha:', today);
-    
+    console.log('Buscando asignaciones para usuario:', req.user.role);
+
     // 2. Verificar la conexión a la base de datos
     if (mongoose.connection.readyState !== 1) {
       console.error('MongoDB no está conectado');
       return res.status(500).json({ msg: 'Database connection not ready' });
     }
 
-    // 3. Buscar la asignación actual
-    console.log('Criterios de búsqueda:', {
-      startDate: { $lte: today },
-      endDate: { $gte: today }
-    });
+    // 3. Buscar asignaciones según el rol
+    let filter = { finalized: false };
 
-    const doc = await Assignment.findOne({
-      startDate: { $lte: today },
-      endDate: { $gte: today }
-    }).populate({
-      path: 'assignments.encargado',
-      select: 'name email area role turno',
-      model: 'User'
-    });
-
-    // 4. Manejar caso de no encontrar asignación
-    if (!doc) {
-      console.log('No se encontró asignación actual');
-      return res.status(404).json({ msg: 'No current assignment' });
+    if (req.user.role === 'ADMIN') {
+      // Para admin, mostrar asignaciones activas actuales
+      filter.startDate = { $lte: today };
+      filter.endDate = { $gte: today };
+    } else if (req.user.role === 'ENCARGADO') {
+      // Para encargados, mostrar todas sus asignaciones no finalizadas
+      filter.assignments = { $elemMatch: { encargado: req.user._id } };
     }
 
-    console.log('Asignación encontrada:', {
-      _id: doc._id,
-      startDate: doc.startDate,
-      endDate: doc.endDate,
-      assignmentsCount: doc.assignments.length
-    });
+    const assignments = await Assignment.find(filter)
+      .populate({
+        path: 'assignments.encargado',
+        select: 'name email area role turno',
+        model: 'User'
+      })
+      .sort({ startDate: -1 }); // Más recientes primero
 
-    // 5. Filtrar y validar asignaciones
-    const validAssignments = doc.assignments.filter(a => {
-      const isValid = a && a.encargado && a.area && a.turno;
-      if (!isValid) {
-        console.log('Asignación inválida encontrada:', a);
-      }
-      return isValid;
-    });
+    console.log(`Encontradas ${assignments.length} asignaciones`);
 
-    console.log('Asignaciones válidas encontradas:', validAssignments.length);
+    // 4. Filtrar y validar asignaciones dentro de cada documento
+    const validAssignments = assignments.map(assignment => {
+      const validAssigns = assignment.assignments.filter(a => {
+        const isValid = a && a.encargado && a.area && a.turno;
+        if (!isValid) {
+          console.log('Asignación inválida encontrada:', a);
+        }
+        return isValid;
+      });
+
+      return {
+        ...assignment.toObject(),
+        assignments: validAssigns
+      };
+    }).filter(assignment => assignment.assignments.length > 0);
+
+    console.log(`Asignaciones válidas encontradas: ${validAssignments.length}`);
 
     if (validAssignments.length === 0) {
-      return res.status(404).json({ msg: 'No valid assignments found' });
+      return res.status(404).json({ msg: 'No assignments found' });
     }
 
-    // 6. Devolver resultado
-    doc.assignments = validAssignments;
-    res.json(doc);
+    // 5. Siempre devolver array para consistencia
+    res.json(validAssignments);
 
   } catch (err) {
     console.error('Error en getCurrentAssignment:', err);
@@ -194,15 +195,14 @@ exports.getAllAssignments = async (req, res) => {
 // Finalize current period for encargado
 exports.finalizePeriod = async (req, res) => {
   try {
-    // Get current assignment
-    const today = normalizeDate(new Date());
-    const assignment = await Assignment.findOne({
-      startDate: { $lte: today },
-      endDate: { $gte: today }
-    });
+    const { assignmentId } = req.body;
+    if (!assignmentId) {
+      return res.status(400).json({ msg: 'assignmentId is required' });
+    }
 
+    const assignment = await Assignment.findById(assignmentId);
     if (!assignment) {
-      return res.status(404).json({ msg: 'No current assignment found' });
+      return res.status(404).json({ msg: 'Assignment not found' });
     }
 
     // Check if user is assigned as encargado in this assignment
@@ -269,9 +269,29 @@ exports.deleteAssignment = async (req, res) => {
   try {
     const id = req.params.id;
     if (!id) return res.status(400).json({ msg: 'Assignment id required' });
-    const doc = await Assignment.findByIdAndDelete(id).populate('assignments.encargado', 'name email area turno');
-    if (!doc) return res.status(404).json({ msg: 'Assignment not found' });
-    res.json({ msg: 'Assignment deleted', deleted: doc });
+
+    // Find the assignment first to get its details
+    const assignment = await Assignment.findById(id);
+    if (!assignment) return res.status(404).json({ msg: 'Assignment not found' });
+
+    // Delete related attendance records
+    // Get all area/turno combinations from the assignment
+    const areaTurnoCombos = assignment.assignments.map(a => ({ area: a.area, turno: a.turno }));
+
+    // Delete attendance records within the assignment date range that match area/turno
+    const attendanceDeleteResult = await Attendance.deleteMany({
+      date: { $gte: assignment.startDate, $lte: assignment.endDate },
+      $or: areaTurnoCombos
+    });
+
+    // Now delete the assignment
+    const deletedAssignment = await Assignment.findByIdAndDelete(id).populate('assignments.encargado', 'name email area turno');
+
+    res.json({
+      msg: 'Assignment and related attendance records deleted',
+      deleted: deletedAssignment,
+      attendanceDeletedCount: attendanceDeleteResult.deletedCount
+    });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
