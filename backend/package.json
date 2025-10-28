@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seed.js"
+    "start": "node -r dotenv/config src/server.js dotenv_config_path=.env.production",
+    "dev": "nodemon -r dotenv/config src/server.js dotenv_config_path=.env.development",
+    "seed": "node src/scripts/seed.js",
+    "start:prod": "NODE_ENV=production node src/server.js",
+    "build": "npm install --production"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
