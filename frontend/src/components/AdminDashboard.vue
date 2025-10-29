@@ -44,10 +44,11 @@
         <select v-model="a.area" class="border p-2 rounded col-span-1" disabled>
           <option value="Manufactura">Manufactura</option>
           <option value="Envasado">Envasado</option>
+          <option value="Soporte">Soporte</option>
         </select>
-        <select v-model.number="a.turno" class="border p-2 rounded col-span-1" disabled>
-          <option :value="1">Día</option>
-          <option :value="2">Noche</option>
+        <select v-model="a.turno" class="border p-2 rounded col-span-1" disabled>
+          <option value="dia">Día</option>
+          <option value="noche">Noche</option>
         </select>
         <button @click="removeAssignment(idx)" class="px-2 py-1 bg-red-500 text-white rounded col-span-1">Quitar</button>
       </div>
@@ -69,7 +70,7 @@
           <tr v-for="a in assignment.assignments" :key="a.encargado._id">
             <td class="p-2">{{ a.encargado.name }}</td>
             <td class="p-2">{{ a.area }}</td>
-            <td class="p-2">{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
+            <td class="p-2">{{ a.turno === 'dia' ? 'Día' : 'Noche' }}</td>
           </tr>
         </tbody>
         </table>
@@ -88,7 +89,7 @@
             <tr v-for="a in doc.assignments" :key="a.encargado._id" v-if="a.encargado">
               <td class="p-2">{{ a.encargado.name }}</td>
               <td class="p-2">{{ a.area }}</td>
-              <td class="p-2">{{ a.turno === 1 ? 'Día' : 'Noche' }}</td>
+              <td class="p-2">{{ a.turno === 'dia' ? 'Día' : 'Noche' }}</td>
             </tr>
           </tbody>
           </table>
@@ -110,6 +111,7 @@ export default {
     const showAssignForm = ref(false);
     const showUserManagement = ref(false);
     const encargados = ref([]);
+    const trabajadores = ref([]);
     const newAssignment = ref({ startDate: '', endDate: '', assignments: [] });
   const assignmentsHistory = ref([]);
   const showHistory = ref(false);
@@ -118,6 +120,7 @@ export default {
     onMounted(async () => {
       await fetchAssignment();
       await fetchEncargados();
+      await fetchTrabajadores();
       // don't auto-open history; just preload
       await fetchAssignmentsHistory();
     });
@@ -182,8 +185,12 @@ export default {
       const res = await api.get('/admin/encargados').catch(()=>null);
       if(res) encargados.value = res.data;
     }
+    async function fetchTrabajadores(){
+      const res = await api.get('/auth/users').catch(()=>null);
+      if(res) trabajadores.value = res.data.filter(u => u.role === 'WORKER');
+    }
     function newAssignmentReset(){
-      newAssignment.value = { startDate: toDateInputValue(new Date()), endDate: toDateInputValue(new Date()), assignments: [{ encargado: '', area: '', turno: 0 }] };
+      newAssignment.value = { startDate: toDateInputValue(new Date()), endDate: toDateInputValue(new Date()), assignments: [{ encargado: '', area: '', turno: '' }] };
       newAssignmentMode.value = true;
     }
     function editAssignment(doc){
@@ -228,7 +235,7 @@ export default {
     }
     // rotation functionality removed
     function addAssignment(){
-      newAssignment.value.assignments.push({ encargado: '', area: '', turno: 0 });
+      newAssignment.value.assignments.push({ encargado: '', area: '', turno: '' });
     }
     function removeAssignment(idx){
       newAssignment.value.assignments.splice(idx, 1);
@@ -257,7 +264,7 @@ export default {
         return {
           encargado: a.encargado,
           area: a.area || (enc ? enc.area : ''),
-          turno: (a.turno && Number(a.turno)) || (enc ? enc.turno : 0)
+          turno: a.turno || (enc ? enc.turno : '')
         };
       });
 
@@ -283,7 +290,7 @@ export default {
         window.showToast('Error al guardar asignación', 'error');
       }
     }
-    return { assignment, weekString, showAssignForm, showUserManagement, encargados, newAssignment, addAssignment, removeAssignment, saveAssignment, setTurnoFromEncargado, assignmentsHistory, showHistory, toggleHistory, toggleAssignForm, toggleUserManagement, newAssignmentReset, editAssignment, deleteAssignment, newAssignmentMode, cancelNewAssignment };
+    return { assignment, weekString, showAssignForm, showUserManagement, encargados, trabajadores, newAssignment, addAssignment, removeAssignment, saveAssignment, setTurnoFromEncargado, assignmentsHistory, showHistory, toggleHistory, toggleAssignForm, toggleUserManagement, newAssignmentReset, editAssignment, deleteAssignment, newAssignmentMode, cancelNewAssignment };
   }
 };
 </script>

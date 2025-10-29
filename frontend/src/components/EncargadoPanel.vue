@@ -21,7 +21,7 @@
             <h3 class="font-semibold text-lg text-gray-800">{{ getAssignedAreaForAssignment(assignment) }}</h3>
             <span :class="[
               'px-2 py-1 rounded-full text-xs font-medium',
-              getAssignedTurnoForAssignment(assignment) === 1 ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-800'
+              getAssignedTurnoForAssignment(assignment) === 'dia' ? 'bg-yellow-100 text-yellow-800' : 'bg-indigo-100 text-indigo-800'
             ]">
               {{ getAssignedTurnoLabelForAssignment(assignment) }}
             </span>
@@ -340,7 +340,7 @@ export default {
         const workersRes = await api.get('/admin/workers');
         const encAssign = findEncargadoAssignment(selectedAssignment.value, userId.value);
         if(encAssign){
-          workers.value = workersRes.data.filter(w => w.area === encAssign.area && Number(w.turno) === Number(encAssign.turno));
+          workers.value = workersRes.data.filter(w => w.area === encAssign.area && w.turno === encAssign.turno);
         } else {
           workers.value = workersRes.data;
         }
@@ -497,7 +497,7 @@ export default {
     function getAssignedTurnoLabel() {
       const a = findEncargadoAssignment(selectedAssignment.value, userId.value);
       if (!a || !a.turno) return 'No asignado';
-      return Number(a.turno) === 1 ? 'Día' : 'Noche';
+      return a.turno === 'dia' ? 'Día' : 'Noche';
     }
 
     function getAttendanceForDay(date) {
@@ -613,7 +613,7 @@ export default {
     function getAssignedTurnoLabelForPeriod(period) {
       const a = findEncargadoAssignment(period, userId.value);
       if (!a || !a.turno) return 'No asignado';
-      return Number(a.turno) === 1 ? 'Día' : 'Noche';
+      return a.turno === 'dia' ? 'Día' : 'Noche';
     }
 
     async function exportPeriodPDF(period) {
@@ -700,13 +700,13 @@ export default {
 
     function getAssignedTurnoForAssignment(assignment) {
       const a = findEncargadoAssignment(assignment, userId.value);
-      return a ? Number(a.turno) : null;
+      return a ? a.turno : null;
     }
 
     function getAssignedTurnoLabelForAssignment(assignment) {
       const turno = getAssignedTurnoForAssignment(assignment);
       if (turno === null) return 'No asignado';
-      return turno === 1 ? 'Día' : 'Noche';
+      return turno === 'dia' ? 'Día' : 'Noche';
     }
 
     return {

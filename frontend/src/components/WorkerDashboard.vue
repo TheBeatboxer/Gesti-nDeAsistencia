@@ -33,7 +33,7 @@
             <td class="p-2">{{ new Date(r.date).toLocaleDateString() }}</td>
             <td class="p-2">{{ r.status === 'P' ? 'Presente' : r.status === 'T' ? 'Tardanza' : 'Falta' }}</td>
             <td class="p-2">{{ r.area }}</td>
-            <td class="p-2">{{ r.turno === 1 ? 'Día' : 'Noche' }}</td>
+            <td class="p-2">{{ r.turno === 'dia' ? 'Día' : 'Noche' }}</td>
             <td class="p-2">{{ r.observation || '-' }}</td>
             <td class="p-2">{{ r.recordedBy.name }}</td>
           </tr>

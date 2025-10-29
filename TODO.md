@@ -1,23 +1,21 @@
-# TODO: Implementar Finalización de Periodo y Historial de Periodos
+# Update Sistema de Asistencia to use turno as string ('dia'/'noche') instead of numbers (1/2)
 
-## Backend Changes
-- [ ] Actualizar modelo Assignment.js: agregar campo `finalized` (Boolean, default false)
-- [ ] En adminController.js: agregar función `finalizePeriod` para marcar assignment actual como finalizado
-- [ ] En routes/admin.js: agregar ruta POST `/finalize-period` para encargados
-- [ ] En adminController.js: agregar función `getFinalizedPeriods` para obtener periodos finalizados del encargado
+## Models
+- [x] Update backend/src/models/Assignment.js: Change turno from Number enum [1,2] to String enum ['dia','noche']
+- [x] Update backend/src/models/Attendance.js: Change turno from Number enum [1,2] to String enum ['dia','noche']
 
-## Frontend Changes
-- [x] REMOVED: Computed `allDaysFinalized` eliminado por problemas en el proyecto
-- [x] REMOVED: Botón "Finalizar periodo" eliminado por problemas en el proyecto
-- [x] REMOVED: Método `finalizePeriod` eliminado por problemas en el proyecto
-- [ ] Mantener función `finalizeAttendance` para finalizar asistencia diaria (no periodo completo)
-- [ ] Cambiar título "Historial de Asistencias" a "Historial de Periodos"
-- [ ] Reemplazar lógica de historial de asistencias individuales por historial de periodos finalizados
-- [ ] Agregar `filteredPeriods` computed para mostrar periodos finalizados
-- [ ] Actualizar template para mostrar lista de periodos en lugar de registros individuales
-- [ ] Agregar funcionalidad para mostrar nueva asignación si existe después de finalizar
+## Controllers
+- [x] Update backend/src/controllers/authController.js: Change default turno from 1 to 'dia'
+- [x] Update backend/src/controllers/adminController.js: Update turno logic to use strings
+- [x] Update backend/src/controllers/attendanceController.js: Update turno logic to use strings
+- [x] Update backend/src/controllers/userController.js: Ensure turno handling as string
+
+## Scripts
+- [x] Update backend/src/scripts/seed.js: Change turno values to 'dia'/'noche'
+- [x] Update backend/scripts/seed.js: Change turno values to 'dia'/'noche'
 
 ## Testing
-- [ ] Probar flujo completo: marcar todos los días, finalizar periodo, verificar historial
-- [ ] Verificar que no se muestre el periodo finalizado en la vista principal
-- [ ] Confirmar que nueva asignación se muestre correctamente
+- [x] Run seed script to verify data creation
+- [ ] Test authentication and user creation
+- [ ] Test assignment creation and retrieval
+- [ ] Test attendance marking and reporting
