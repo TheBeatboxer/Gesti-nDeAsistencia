@@ -6,8 +6,11 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['ADMIN','ENCARGADO','WORKER'], default: 'WORKER' },
-  area: { type: String, enum: ['Manufactura','Envasado'], default: 'Manufactura' },
-  turno: { type: Number, enum: [1,2], default: 1 }, // 1=Dia, 2=Noche
+  area: { type: String, enum: ['Manufactura','Envasado','Soporte'], default: 'Manufactura' },
+  linea: { type: String },
+  puesto: { type: String },
+  codigo: { type: String },
+  turno: { type: String, enum: ['dia','noche'], default: 'dia' },
   createdAt: { type: Date, default: Date.now }
 });
 
