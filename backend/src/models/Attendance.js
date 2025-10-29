@@ -5,7 +5,7 @@ const AttendanceSchema = new mongoose.Schema({
   worker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // encargado who marked
   area: { type: String, enum: ['Manufactura','Envasado'] },
-  turno: { type: Number, enum: [1,2] },
+  turno: { type: String, enum: ['dia','noche'] },
   status: { type: String, enum: ['P','T','F'], required: true },
   observation: { type: String },
   finalized: { type: Boolean, default: false }, // new field to mark if attendance for this date is finalized

@@ -21,17 +21,17 @@ async function seed() {
       password: 'admin123',
       role: 'ADMIN',
       area: 'Manufactura',
-      turno: 1
+      turno: 'dia'
     });
     await admin.save();
     console.log('Admin created');
 
     // Create encargados
     const encargados = [
-      { name: 'Encargado Manufactura Día', email: 'enc1@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Manufactura', turno: 1 },
-      { name: 'Encargado Manufactura Noche', email: 'enc2@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Manufactura', turno: 2 },
-      { name: 'Encargado Envasado Día', email: 'enc3@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Envasado', turno: 1 },
-      { name: 'Encargado Envasado Noche', email: 'enc4@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Envasado', turno: 2 }
+      { name: 'Encargado Manufactura Día', email: 'enc1@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Manufactura', turno: 'dia' },
+      { name: 'Encargado Manufactura Noche', email: 'enc2@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Manufactura', turno: 'noche' },
+      { name: 'Encargado Envasado Día', email: 'enc3@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Envasado', turno: 'dia' },
+      { name: 'Encargado Envasado Noche', email: 'enc4@example.com', password: 'enc123', role: 'ENCARGADO', area: 'Envasado', turno: 'noche' }
     ];
 
     const createdEncargados = [];
@@ -47,7 +47,8 @@ async function seed() {
     let workerCounter = 1;
     for (let areaIdx = 0; areaIdx < 2; areaIdx++) {
       const area = areaIdx === 0 ? 'Manufactura' : 'Envasado';
-      for (let turno = 1; turno <= 2; turno++) {
+      for (let turnoIdx = 0; turnoIdx < 2; turnoIdx++) {
+        const turno = turnoIdx === 0 ? 'dia' : 'noche';
         for (let i = 1; i <= 10; i++) {
           const worker = new User({
             name: `Trabajador ${area} Turno ${turno} #${i}`,

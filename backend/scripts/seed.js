@@ -8,15 +8,15 @@ async function run(){
   // await User.deleteMany({});
   const users = [
     { name: 'Admin', email: 'admin@example.com', password: 'password123', role: 'ADMIN' },
-    { name: 'Encargado Manufactura Dia', email: 'enc1@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 1 },
-    { name: 'Encargado Manufactura Noche', email: 'enc2@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 2 },
-    { name: 'Encargado Envasado Dia', email: 'enc3@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 1 },
-    { name: 'Encargado Envasado Noche', email: 'enc4@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 2 }
+    { name: 'Encargado Manufactura Dia', email: 'enc1@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 'dia' },
+    { name: 'Encargado Manufactura Noche', email: 'enc2@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 'noche' },
+    { name: 'Encargado Envasado Dia', email: 'enc3@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 'dia' },
+    { name: 'Encargado Envasado Noche', email: 'enc4@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 'noche' }
   ];
 
   // Create 10 workers per area per turno
   const areas = ['Manufactura', 'Envasado'];
-  const turnos = [1, 2];
+  const turnos = ['dia', 'noche'];
   let workerId = 1;
   for (const area of areas) {
     for (const turno of turnos) {

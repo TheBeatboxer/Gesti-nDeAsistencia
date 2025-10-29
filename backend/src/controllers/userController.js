@@ -10,7 +10,7 @@ function normalizeDate(date) {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role, area, turno } = req.body;
+    const { name, email, password, role, area, turno, linea, puesto, codigo } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(400).json({ msg: 'name, email, password, role required' });
     }
@@ -20,9 +20,9 @@ exports.createUser = async (req, res) => {
     }
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ msg: 'Email already exists' });
-    const user = new User({ name, email, password, role, area, turno });
+    const user = new User({ name, email, password, role, area, turno, linea, puesto, codigo });
     await user.save();
-    res.status(201).json({ msg: 'User created', user: { id: user._id, name, email, role, area, turno } });
+    res.status(201).json({ msg: 'User created', user: { id: user._id, name, email, role, area, turno, linea, puesto, codigo } });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -74,16 +74,28 @@ exports.updateUser = async (req, res) => {
     if (req.user.role !== 'ADMIN') {
       return res.status(403).json({ msg: 'Only admin can update users' });
     }
-    const payload = { ...req.body };
-    if (payload.password) {
-      const salt = await bcrypt.genSalt(10);
-      payload.password = await bcrypt.hash(payload.password, salt);
-    } else {
-      delete payload.password; // Don't update password if not provided
+    const u = await User.findById(req.params.id);
+    if (!u) return res.status(404).json({ msg: 'User not found' });
+
+    // Update fields
+    if (req.body.name !== undefined) u.name = req.body.name;
+    if (req.body.email !== undefined) u.email = req.body.email;
+    if (req.body.role !== undefined) u.role = req.body.role;
+    if (req.body.area !== undefined) u.area = req.body.area;
+    if (req.body.turno !== undefined) u.turno = req.body.turno;
+    if (req.body.linea !== undefined) u.linea = req.body.linea;
+    if (req.body.puesto !== undefined) u.puesto = req.body.puesto;
+    if (req.body.codigo !== undefined) u.codigo = req.body.codigo;
+    if (req.body.password) {
+      u.password = req.body.password; // Plain text, pre-save hook will hash it
     }
-    const u = await User.findByIdAndUpdate(req.params.id, payload, { new: true }).select('-password');
-    res.json(u);
-  } catch (err) { res.status(500).json({ msg: err.message }); }
+
+    await u.save();
+    const updatedUser = await User.findById(req.params.id).select('-password');
+    res.json(updatedUser);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
 };
 
 exports.deleteUser = async (req, res) => {

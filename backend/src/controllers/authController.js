@@ -10,7 +10,7 @@ exports.register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const { name, email, password, role = 'WORKER', area = 'Manufactura', turno = 1 } = req.body;
+    const { name, email, password, role = 'WORKER', area = 'Manufactura', turno = 'dia' } = req.body;
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ msg: 'User already exists' });
     user = new User({ name, email, password, role, area, turno });

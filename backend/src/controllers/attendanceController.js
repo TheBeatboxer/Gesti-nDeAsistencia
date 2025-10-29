@@ -45,7 +45,7 @@ exports.markAttendance = async (req, res) => {
 
     // Always use area and turno from assignment (for admin, use the first assignment or worker's area if none)
     const area = encAssign ? encAssign.area : (assignment.assignments[0]?.area || worker.area);
-    const turno = encAssign ? encAssign.turno : (assignment.assignments[0]?.turno || 1);
+    const turno = encAssign ? encAssign.turno : (assignment.assignments[0]?.turno || 'dia');
 
     const payload = {
       date: d,
@@ -97,7 +97,7 @@ exports.finalizeAttendance = async (req, res) => {
 
     // Get all workers for this encargado's area and turno
     const areaToUse = encAssign ? encAssign.area : (assignment.assignments[0]?.area);
-    const turnoToUse = encAssign ? encAssign.turno : (assignment.assignments[0]?.turno || 1);
+    const turnoToUse = encAssign ? encAssign.turno : (assignment.assignments[0]?.turno || 'dia');
     const workers = await User.find({ role: 'WORKER', area: areaToUse, turno: turnoToUse }).select('_id');
     const workerIds = workers.map(w => w._id.toString());
 
