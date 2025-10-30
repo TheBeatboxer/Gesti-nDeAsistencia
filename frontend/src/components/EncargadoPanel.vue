@@ -403,7 +403,11 @@ export default {
     async function markAllPresent(){
       if(selectedDay.value.finalized) return;
       try {
-        for(const w of workers.value){
+        // Show loading state
+        window.showToast('Marcando todos como presentes...', 'info');
+
+        // Use Promise.all for parallel requests to speed up
+        const promises = workers.value.map(w => {
           const payload = {
             date: selectedDay.value.date,
             workerId: w._id,
@@ -411,8 +415,11 @@ export default {
             observation: '',
             assignmentId: selectedAssignment.value._id
           };
-          await api.post('/attendance/mark', payload);
-        }
+          return api.post('/attendance/mark', payload);
+        });
+
+        await Promise.all(promises);
+
         window.showToast('Todos marcados como Presentes', 'success');
         fetchAttendance();
         // Update attendance reactive object

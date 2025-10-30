@@ -135,9 +135,11 @@ export default {
     async function fetchAssignment(){
       // Use the backend "current" endpoint to avoid timezone / date parsing mismatches
       const resp = await api.get('/admin/assignment/current').catch(()=>null);
-      if(resp && resp.data) {
-        assignment.value = resp.data;
-        weekString.value = `${new Date(resp.data.startDate).toLocaleDateString()} - ${new Date(resp.data.endDate).toLocaleDateString()}`;
+      if(resp && resp.data && Array.isArray(resp.data) && resp.data.length > 0) {
+        // Take the first assignment if it's an array
+        const currentAssignment = resp.data[0];
+        assignment.value = currentAssignment;
+        weekString.value = `${new Date(currentAssignment.startDate).toLocaleDateString()} - ${new Date(currentAssignment.endDate).toLocaleDateString()}`;
       } else {
         assignment.value = null;
         weekString.value = '';
@@ -281,6 +283,8 @@ export default {
         if (res && res.data) {
           assignment.value = res.data;
           weekString.value = `${new Date(res.data.startDate).toLocaleDateString()} - ${new Date(res.data.endDate).toLocaleDateString()}`;
+          // Refresh the current assignment display
+          await fetchAssignment();
         }
         // refresh history after save
         await fetchAssignmentsHistory();
