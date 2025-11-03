@@ -4,7 +4,7 @@ const AttendanceSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   worker: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // encargado who marked
-  area: { type: String, enum: ['Manufactura','Envasado'] },
+  area: { type: String, enum: ['Area 1','Area 2'] },
   turno: { type: String, enum: ['dia','noche'] },
   status: { type: String, enum: ['P','T','F'], required: true },
   observation: { type: String },

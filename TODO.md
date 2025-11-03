@@ -19,3 +19,21 @@
 - [ ] Test authentication and user creation
 - [ ] Test assignment creation and retrieval
 - [ ] Test attendance marking and reporting
+
+# Update Sistema de Asistencia to use areas 'Area 1' and 'Area 2' only, and User model fields: name, email, password, role, area, codigo, turno
+
+## Models
+- [x] Update backend/src/models/User.js: Change area enum to ['Area 1', 'Area 2'], remove 'linea' and 'puesto' fields
+- [x] Update backend/src/models/Assignment.js: Change area enum to ['Area 1', 'Area 2']
+- [x] Update backend/src/models/Attendance.js: Change area enum to ['Area 1', 'Area 2']
+
+## Controllers
+- [x] Update backend/src/controllers/userController.js: Remove handling of 'linea' and 'puesto' in createUser, updateUser, and response fields
+
+## Scripts
+- [x] Update backend/scripts/seed.js: Change areas in seed data to 'Area 1' and 'Area 2'
+
+## Testing
+- [ ] Run seed script to update existing data
+- [ ] Test user creation and updates
+- [ ] Test assignments and attendance with new areas

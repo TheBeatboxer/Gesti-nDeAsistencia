@@ -10,7 +10,7 @@ function normalizeDate(date) {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, password, role, area, turno, linea, puesto, codigo } = req.body;
+    const { name, email, password, role, area, turno, codigo } = req.body;
     if (!name || !email || !password || !role) {
       return res.status(400).json({ msg: 'name, email, password, role required' });
     }
@@ -20,9 +20,9 @@ exports.createUser = async (req, res) => {
     }
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ msg: 'Email already exists' });
-    const user = new User({ name, email, password, role, area, turno, linea, puesto, codigo });
+    const user = new User({ name, email, password, role, area, turno, codigo });
     await user.save();
-    res.status(201).json({ msg: 'User created', user: { id: user._id, name, email, role, area, turno, linea, puesto, codigo } });
+    res.status(201).json({ msg: 'User created', user: { id: user._id, name, email, role, area, turno, codigo } });
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
@@ -83,8 +83,6 @@ exports.updateUser = async (req, res) => {
     if (req.body.role !== undefined) u.role = req.body.role;
     if (req.body.area !== undefined) u.area = req.body.area;
     if (req.body.turno !== undefined) u.turno = req.body.turno;
-    if (req.body.linea !== undefined) u.linea = req.body.linea;
-    if (req.body.puesto !== undefined) u.puesto = req.body.puesto;
     if (req.body.codigo !== undefined) u.codigo = req.body.codigo;
     if (req.body.password) {
       u.password = req.body.password; // Plain text, pre-save hook will hash it

@@ -4,18 +4,19 @@ const User = require('../src/models/User');
 
 async function run(){
   await mongoose.connect(process.env.MONGO_URI);
-  // clear?
-  // await User.deleteMany({});
+  console.log('Connected to MongoDB');
+  console.log('Cleared existing data');
+  await User.deleteMany({});
   const users = [
     { name: 'Admin', email: 'admin@example.com', password: 'password123', role: 'ADMIN' },
-    { name: 'Encargado Manufactura Dia', email: 'enc1@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 'dia' },
-    { name: 'Encargado Manufactura Noche', email: 'enc2@example.com', password: 'password123', role: 'ENCARGADO', area: 'Manufactura', turno: 'noche' },
-    { name: 'Encargado Envasado Dia', email: 'enc3@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 'dia' },
-    { name: 'Encargado Envasado Noche', email: 'enc4@example.com', password: 'password123', role: 'ENCARGADO', area: 'Envasado', turno: 'noche' }
+    { name: 'Encargado Area 1 Dia', email: 'enc1@example.com', password: 'password123', role: 'ENCARGADO', area: 'Area 1', turno: 'dia' },
+    { name: 'Encargado Area 1 Noche', email: 'enc2@example.com', password: 'password123', role: 'ENCARGADO', area: 'Area 1', turno: 'noche' },
+    { name: 'Encargado Area 2 Dia', email: 'enc3@example.com', password: 'password123', role: 'ENCARGADO', area: 'Area 2', turno: 'dia' },
+    { name: 'Encargado Area 2 Noche', email: 'enc4@example.com', password: 'password123', role: 'ENCARGADO', area: 'Area 2', turno: 'noche' }
   ];
 
   // Create 10 workers per area per turno
-  const areas = ['Manufactura', 'Envasado'];
+  const areas = ['Area 1', 'Area 2'];
   const turnos = ['dia', 'noche'];
   let workerId = 1;
   for (const area of areas) {

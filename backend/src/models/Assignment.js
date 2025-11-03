@@ -5,7 +5,7 @@ const AssignmentSchema = new mongoose.Schema({
   endDate: { type: Date, required: true }, // required end date for the assignment range
   assignments: [{
     encargado: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    area: { type: String, enum: ['Manufactura','Envasado'], required: true },
+    area: { type: String, enum: ['Area 1','Area 2'], required: true },
     turno: { type: String, enum: ['dia','noche'], required: true } // 'dia'=Dia, 'noche'=Noche
   }],
   finalized: { type: Boolean, default: false }, // new field to mark if the entire period is finalized
