@@ -33,7 +33,30 @@
 ## Scripts
 - [x] Update backend/scripts/seed.js: Change areas in seed data to 'Area 1' and 'Area 2'
 
+## Frontend
+- [x] Update frontend/src/components/UserManagement.vue: Update area options, remove linea/puesto fields
+- [x] Update frontend/src/components/AdminDashboard.vue: Update area options
+
 ## Testing
-- [ ] Run seed script to update existing data
+- [x] Run seed script to update existing data
 - [ ] Test user creation and updates
 - [ ] Test assignments and attendance with new areas
+
+# Route Protection and Session Management
+
+## Frontend
+- [x] Update router.js: Add navigation guards for authentication and role-based access
+- [x] Update App.vue: Remove redundant onMounted redirect logic
+- [x] Update api.js: Improve 401 error handling to prevent multiple redirects
+- [x] Update Login.vue: Clear localStorage before login to prevent session conflicts
+
+## Backend
+- [x] Update auth.js: Enhanced auth middleware with better logging
+- [x] Update authController.js: Improved login with logging and session management
+
+## Testing
+- [ ] Test route protection (unauthenticated users redirected to login)
+- [ ] Test role-based access (users can only access their role-specific routes)
+- [x] Test session management (no multiple sessions in same browser) - Added cross-tab session sync
+- [x] Test logout functionality - Enhanced with cross-tab logout
+- [ ] Test token expiration handling

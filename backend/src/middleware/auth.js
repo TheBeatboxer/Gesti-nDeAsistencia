@@ -26,14 +26,17 @@ exports.authMiddleware = async (req, res, next) => {
       return res.status(401).json({ msg: 'User not found' });
     }
 
-    // 4. Usuario encontrado
+    // 4. Verificar si el usuario está activo (opcional, pero buena práctica)
+    // Aquí puedes agregar lógica adicional si es necesario
+
+    // 5. Usuario encontrado
     console.log('Auth Success:', {
       userId: user._id,
       role: user.role,
       path: req.path,
       method: req.method
     });
-    
+
     req.user = user;
     next();
   } catch(err) {

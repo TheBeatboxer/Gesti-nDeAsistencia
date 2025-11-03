@@ -42,9 +42,8 @@
           <option v-for="e in encargados" :value="e._id">{{ e.name }}</option>
         </select>
         <select v-model="a.area" class="border p-2 rounded col-span-1" disabled>
-          <option value="Manufactura">Manufactura</option>
-          <option value="Envasado">Envasado</option>
-          <option value="Soporte">Soporte</option>
+          <option value="Area 1">Area 1</option>
+          <option value="Area 2">Area 2</option>
         </select>
         <select v-model="a.turno" class="border p-2 rounded col-span-1" disabled>
           <option value="dia">Día</option>

@@ -25,13 +25,29 @@ export default {
     const error = ref('');
     async function login(){
       try{
+        // Clear any existing session data before login and trigger storage event
+        localStorage.clear();
+        // Trigger storage event to notify other tabs of session change
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          oldValue: 'some_value',
+          newValue: null
+        }));
+
         const res = await api.post('/auth/login', { email: email.value, password: password.value });
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('userId', res.data.user.id); // Store userId
         localStorage.setItem('role', res.data.user.role); // Store role
         localStorage.setItem('userName', res.data.user.name); // Store userName
         localStorage.setItem('turno', res.data.user.turno); // Store turno
-        // basic routing by role
+
+        // Trigger storage event to notify other tabs of new session
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'token',
+          oldValue: null,
+          newValue: res.data.token
+        }));
+        // Router will handle navigation automatically via navigation guards
         const role = res.data.user.role;
         if(role === 'ADMIN') router.push('/admin');
         else if(role === 'ENCARGADO') router.push('/encargado');

@@ -43,8 +43,15 @@ export default {
     }
 
     function logout() {
+      // Clear localStorage and trigger storage event for other tabs
       localStorage.clear();
-      // Redirect to login page instead of full reload
+      // Trigger storage event manually for same-tab logout
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'token',
+        oldValue: 'some_value',
+        newValue: null
+      }));
+      // Redirect to login page
       router.push('/');
     }
 

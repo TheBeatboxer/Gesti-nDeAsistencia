@@ -31,9 +31,26 @@ exports.login = async (req, res) => {
     if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
+
+    // Generate new token for this session
     const token = signToken(user._id);
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role, area: user.area, turno: user.turno } });
+
+    // Log successful login
+    console.log(`User ${user.email} (${user.role}) logged in successfully`);
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        area: user.area,
+        turno: user.turno
+      }
+    });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ msg: err.message });
   }
 };
